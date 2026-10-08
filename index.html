@@ -1,0 +1,2337 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>재이미나는 음운 변동 마스터 챌린지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@400;500;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FAFBF8; --ink:#1D2321; --muted:#5D6862; --grid:#3B8A68; --grid-soft:#D5E7DD;
+  --mark:#D9412E; --mark-soft:#FBE3DF; --ok:#2563C9; --ok-soft:#DFE9FA; --surface:#FFFFFF;
+  --c1:#2563C9; --c2:#D9412E; --c3:#1F8A5B; --c4:#8A4FD0;
+  --c1s:#E3ECFB; --c2s:#FBE6E2; --c3s:#DFF2E8; --c4s:#EFE6FA;
+  --display:"Black Han Sans","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#131816; --ink:#E7EEEA; --muted:#9AA8A0; --grid:#5FB58E; --grid-soft:#22332B;
+    --mark:#FF7563; --mark-soft:#3A1F1B; --ok:#7AA8FF; --ok-soft:#1B2740; --surface:#1A201D;
+    --c1:#7AA8FF; --c2:#FF7563; --c3:#5FCB93; --c4:#B98CFF;
+    --c1s:#1B2740; --c2s:#3A1F1B; --c3s:#16301F; --c4s:#2A1F3D;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#131816; --ink:#E7EEEA; --muted:#9AA8A0; --grid:#5FB58E; --grid-soft:#22332B;
+  --mark:#FF7563; --mark-soft:#3A1F1B; --ok:#7AA8FF; --ok-soft:#1B2740; --surface:#1A201D;
+  --c1:#7AA8FF; --c2:#FF7563; --c3:#5FCB93; --c4:#B98CFF;
+  --c1s:#1B2740; --c2s:#3A1F1B; --c3s:#16301F; --c4s:#2A1F3D;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 64px)}
+body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.6;
+  background-image:linear-gradient(var(--grid-soft) 1px,transparent 1px);background-size:100% 32px}
+main{max-width:680px;margin:0 auto;padding:0 18px 56px}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--ok);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;line-height:1.2}
+h1{font-size:clamp(30px,8vw,46px)}
+h1 .sub1{display:block;font-size:.55em;color:var(--c1);margin-bottom:2px}
+h2{font-size:25px;margin-top:30px}
+h3{font-size:21px}
+p{margin:.35em 0}
+.muted{color:var(--muted)}
+.small{font-size:15px}
+.screen[hidden]{display:none}
+.lead{font-size:18px;color:var(--muted);margin:6px 0 14px}
+
+/* nav */
+.steps{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;margin:0 -18px 22px;border-bottom:2px solid var(--grid);background:var(--surface);overflow-x:auto}
+.steps button{flex:1 0 auto;white-space:nowrap;border:0;background:transparent;padding:11px 4px;font-weight:700;font-size:13.5px;letter-spacing:-.03em;border-radius:0;color:var(--ink)}
+.steps{scrollbar-width:none;flex-wrap:wrap}
+.steps button{border-bottom:1px solid var(--grid-soft)}
+.steps button[aria-current="step"]{background:var(--grid);color:var(--paper)}
+.steps[hidden]{display:none}
+
+/* 원고지 cells */
+.sheet{display:flex;flex-wrap:wrap;justify-content:center}
+.cell{width:clamp(46px,13vw,66px);aspect-ratio:1;border:2px solid var(--grid);margin-left:-2px;display:grid;place-items:center;font-family:var(--display);font-size:clamp(26px,7.5vw,38px);background:var(--surface);position:relative}
+.cell:first-child{margin-left:0}
+.cell.gap{border-color:transparent;background:transparent;width:18px}
+.cell.br{color:var(--muted);border-color:transparent;background:transparent;width:26px}
+.cell.changed{color:var(--mark)}
+.cell.changed svg{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);pointer-events:none}
+.cell.changed ellipse{fill:none;stroke:var(--mark);stroke-width:3;stroke-linecap:round;stroke-dasharray:240}
+.draw ellipse{animation:draw .6s ease-out both}
+@keyframes draw{from{stroke-dashoffset:240}to{stroke-dashoffset:0}}
+.arrow{font-family:var(--display);color:var(--mark);font-size:22px;text-align:center;margin:4px 0}
+
+/* common */
+.panel{background:var(--surface);border:2px solid var(--grid);padding:18px;margin-top:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.btn{border:2px solid var(--ink);background:var(--ink);color:var(--paper);padding:12px 20px;font-weight:700;border-radius:0}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.hint{font-size:14px;color:var(--muted);margin-top:8px}
+.chip{border:2px solid var(--grid);background:var(--surface);padding:6px 14px;font-weight:700;border-radius:0}
+.chip[aria-pressed="true"]{background:var(--grid);color:var(--paper)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.tag{display:inline-block;font-size:13px;font-weight:700;padding:1px 8px;border:1.5px solid currentColor;margin:2px 4px 2px 0;white-space:nowrap}
+.k1{color:var(--c1)} .k2{color:var(--c2)} .k3{color:var(--c3)} .k4{color:var(--c4)}
+.b1{background:var(--c1s)} .b2{background:var(--c2s)} .b3{background:var(--c3s)} .b4{background:var(--c4s)}
+.tchip{display:inline-flex;align-items:center;gap:6px;font-weight:700;padding:4px 10px;border:2px solid currentColor;margin:3px 6px 3px 0;background:var(--surface);font-size:16px;border-radius:0}
+.tchip small{font-weight:500;opacity:.8}
+.link{border:1.5px solid var(--grid);background:var(--paper);color:var(--ink);padding:3px 10px;font-size:15px;border-radius:0;margin:3px 6px 3px 0}
+.link:hover{border-color:var(--mark);color:var(--mark)}
+.link.sp{border-style:dashed}
+.lrow{display:flex;flex-wrap:wrap;align-items:center;margin-top:8px}
+.lrow > b{font-size:14px;color:var(--muted);margin-right:8px;min-width:5.5em}
+table{border-collapse:collapse;width:100%;min-width:420px;background:var(--surface)}
+th,td{border:2px solid var(--grid);padding:9px;text-align:left;vertical-align:top;font-size:16px}
+th{background:var(--grid-soft)}
+.tablewrap{overflow-x:auto;margin-top:10px}
+.old{font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-weight:700}
+details{margin-top:8px} summary{cursor:pointer;color:var(--muted);font-size:14px}
+details p{font-size:15px;color:var(--muted)}
+
+/* learn */
+.hero{margin:6px 0 10px;text-align:center}
+.hero .sheet{margin-top:16px}
+.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+.cat4{padding:10px 6px;text-align:center;border:2px solid currentColor;background:var(--surface)}
+.cat4 b{display:block;font-family:var(--display);font-weight:400;font-size:22px}
+.cat4 code{font-family:var(--body);font-weight:700;font-size:16px;display:block}
+.cat4 span{font-size:13px;color:var(--muted)}
+.map{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.mcol{display:flex;flex-direction:column;gap:8px}
+.mcol h3{font-size:18px;text-align:center}
+.tile{border:2px solid currentColor;background:var(--surface);padding:10px 6px;font-weight:700;font-size:15px;line-height:1.3;text-align:center;border-radius:0;min-height:58px;position:relative}
+.tile[aria-pressed="true"]{color:var(--paper)!important}
+.tile.k1[aria-pressed="true"]{background:var(--c1)} .tile.k2[aria-pressed="true"]{background:var(--c2)} .tile.k3[aria-pressed="true"]{background:var(--c3)} .tile.k4[aria-pressed="true"]{background:var(--c4)}
+.tile i{display:block;font-style:normal;font-size:12px;font-weight:500;opacity:.85;margin-top:3px}
+.hub{margin-top:16px;border:3px solid currentColor;background:var(--surface);padding:18px;scroll-margin-top:70px}
+.hub h2{margin:0 0 6px}
+.formula{font-size:22px;font-weight:700;margin:10px 0;padding:12px;text-align:center;background:var(--paper);border:2px dashed currentColor}
+.hub .one{font-size:18px;color:var(--ink)}
+.badges{margin:8px 0}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.mini > div{border:2px solid var(--grid);background:var(--surface);padding:12px}
+.mini > div > b:first-child{display:block;margin-bottom:4px}
+.cmp td:first-child{white-space:nowrap;font-weight:700}
+
+/* explore */
+.words{display:flex;flex-wrap:wrap;gap:8px}
+.word{border:2px solid var(--grid-soft);background:var(--surface);padding:6px 12px;font-size:17px;border-radius:0}
+.word[aria-current="true"]{border-color:var(--mark);color:var(--mark);font-weight:700}
+.detail{background:var(--surface);border:2px solid var(--grid);padding:18px;margin-top:12px;scroll-margin-top:70px}
+.steps-list{list-style:none;padding:0;margin:12px 0 0}
+.steps-list li{padding:6px 0 6px 26px;position:relative;font-size:17px}
+.steps-list li::before{content:"▸";position:absolute;left:4px;color:var(--mark)}
+
+/* rules */
+.art{border:2px solid var(--grid);background:var(--surface);padding:14px 16px;margin-top:12px;scroll-margin-top:70px}
+.art.flash{outline:3px solid var(--mark)}
+.art .no{font-family:var(--display);font-size:22px;margin-right:8px}
+.art .sum{font-size:18px;font-weight:700;margin:6px 0}
+.exs{color:var(--muted);font-size:15px}
+.rsec h2{border-bottom:2px solid var(--grid);padding-bottom:4px;font-size:22px}
+.note{font-size:15px;color:var(--muted);border-left:4px solid var(--grid-soft);padding-left:12px;margin-top:10px}
+
+/* middle */
+.mcard{border:2px solid var(--grid);background:var(--surface);padding:16px;margin-top:14px;scroll-margin-top:70px}
+.mcard.flash{outline:3px solid var(--mark)}
+.mcard h3{margin-bottom:6px}
+.mcard .now{margin-top:10px;padding:10px 12px;background:var(--grid-soft);font-size:17px}
+.mcard .now b{color:var(--grid)}
+
+/* game home */
+.modes{display:grid;gap:10px;margin-top:14px}
+.mode{display:flex;align-items:center;gap:14px;text-align:left;border:2px solid var(--ink);background:var(--surface);padding:14px 16px;border-radius:0}
+.mode .ic{font-size:30px;line-height:1}
+.mode b{display:block;font-size:19px}
+.mode span{font-size:14px;color:var(--muted)}
+.mode.main{background:var(--ink);color:var(--paper)}
+.mode.main span{color:inherit;opacity:.8}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.stat{flex:1 1 30%;text-align:center;border:2px solid var(--grid);background:var(--surface);padding:8px 4px}
+.stat b{display:block;font-family:var(--display);font-weight:400;font-size:28px;color:var(--grid)}
+.stat span{font-size:13px;color:var(--muted)}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:6px;margin-top:10px}
+.mt{padding:8px 4px;text-align:center;font-size:13px;font-weight:700;line-height:1.25;border:2px solid var(--grid-soft);background:var(--surface);color:var(--muted)}
+.mt .bar{display:flex;gap:2px;justify-content:center;margin-top:5px}
+.mt .bar i{width:12px;height:6px;background:var(--grid-soft)}
+.mt.l1 .bar i:nth-child(-n+1),.mt.l2 .bar i:nth-child(-n+2),.mt.l3 .bar i:nth-child(-n+3),.mt.l4 .bar i:nth-child(-n+4){background:var(--grid)}
+.mt.l4{border-color:var(--grid);color:var(--grid)}
+.mt.weak{border-color:var(--mark);color:var(--mark)}
+label{display:block;font-weight:700;margin-bottom:6px}
+.who2{display:grid;grid-template-columns:1fr 1.3fr;gap:10px}
+.gbar{display:flex;gap:8px;margin-top:12px}
+.mmwrap{overflow-x:auto;border:2px solid var(--grid);background:var(--paper);margin-top:8px}
+.mm{display:block;width:100%;min-width:760px;height:auto}
+.mmleaf{cursor:pointer} .mmleaf:hover rect,.mmleaf:focus rect{fill:var(--grid-soft)} .mmleaf:focus{outline:none}
+.fab{position:fixed;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:15;border:2px solid var(--ink);background:var(--surface);color:var(--ink);font-weight:700;padding:10px 14px;border-radius:0;box-shadow:3px 3px 0 var(--ink)}
+.pgrid{display:grid;gap:8px;margin-top:10px}
+.pgrid .btn{text-align:left}
+#printArea{display:none}
+@page land{size:A4 landscape;margin:10mm}
+@media print{
+  :root:not([data-theme="pa"]):not([data-theme="pb"]){--paper:#fff;--ink:#1D2321;--muted:#5D6862;--grid:#3B8A68;--grid-soft:#E8F2EC;--mark:#D9412E;--surface:#fff;--c1:#2563C9;--c2:#D9412E;--c3:#1F8A5B;--c4:#8A4FD0;--c1s:#EEF3FC;--c2s:#FCEDEA;--c3s:#E8F5EE;--c4s:#F3ECFB}
+  body{background:#fff!important;font-size:12pt}
+  .fab,.modal,.steps,.gbar,#printMenu{display:none!important}
+  body.print-screen .row,body.print-screen .filters,body.print-screen #ruleJump,body.print-screen .timer{display:none!important}
+  body.print-screen main{max-width:none;padding:0}
+  .art,.mcard,.panel,.hub,.detail,tr{break-inside:avoid}
+  .mm{min-width:0}
+  .mmwrap{overflow:visible;border:0}
+  body.print-doc main{display:none!important}
+  body.print-doc #printArea{display:block}
+  body.print-land #printArea{page:land}
+}
+.why{border:2px solid var(--c1);background:var(--c1s);padding:14px 16px;margin:6px 0 14px}
+.why > b{font-size:18px}
+.why ul{margin:8px 0 0;padding-left:20px}
+.why li{margin:6px 0;font-size:16px;line-height:1.55}
+.chain{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px;counter-reset:c}
+.ring{border:2px solid var(--grid);color:var(--ink);background:var(--surface);padding:10px 4px;text-align:center;font-weight:700;font-size:15px;line-height:1.35;border-radius:0;position:relative}
+.ring b{display:block;font-family:var(--display);font-weight:400;font-size:19px;color:var(--grid)}
+.ring span{display:block;font-size:12px;font-weight:500;color:var(--muted)}
+.ring:not(:last-child)::after{content:"→";position:absolute;right:-10px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:700;z-index:1}
+@media (max-width:520px){ .chain{grid-template-columns:1fr 1fr} .ring:nth-child(2)::after{content:""} }
+.credit{text-align:center;font-size:14px;color:var(--muted);margin:36px 0 0;padding-top:14px;border-top:1px solid var(--grid-soft)}
+.modal{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.45);display:grid;place-items:center;padding:20px}
+.mbox{background:var(--surface);border:3px solid var(--ink);padding:20px;max-width:360px;width:100%}
+.mbox p{font-weight:700;font-size:18px}
+.mbox input{width:100%;font:inherit;font-size:22px;letter-spacing:.3em;padding:10px 12px;border:2px solid var(--grid);background:var(--paper);color:var(--ink);border-radius:0;margin-top:6px}
+#mErr{color:var(--mark);font-weight:700;min-height:1.2em}
+.tmode{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin:0 0 16px;padding:10px 12px;background:var(--ink);color:var(--paper);font-weight:700}
+.tmode .gbtn{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.gbtn{border:2px solid var(--ink);background:var(--surface);padding:8px 14px;font-weight:700;font-size:16px;border-radius:0}
+.gbtn:disabled{opacity:.35;cursor:not-allowed}
+.whoRow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-weight:700;font-size:19px}
+.hello{display:inline-flex;align-items:center;gap:8px;font-weight:700;margin:8px 0 0}
+.hello button{border:1.5px solid var(--grid);background:var(--surface);font-size:14px;padding:2px 10px;border-radius:0}
+#lNote.err{color:var(--mark);font-weight:700}
+[hidden]{display:none!important}
+#tTable th{white-space:nowrap}
+#tStats .stat{flex-basis:22%}
+#tTable th button{all:unset;cursor:pointer;font-weight:700}
+#tTable td{font-size:15px;white-space:nowrap}
+#tTable td.wk{white-space:normal;color:var(--mark);font-size:14px;min-width:140px}
+.wbar{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:15px}
+.wbar span{min-width:9em}
+.wbar i{display:block;height:14px;background:var(--mark)}
+input[type=text],input[type=email],input[type=password]{width:100%;font:inherit;padding:12px 14px;border:2px solid var(--grid);background:var(--paper);color:var(--ink);border-radius:0}
+.board{list-style:none;padding:0;margin:10px 0 0;counter-reset:r}
+.board li{display:flex;gap:12px;align-items:baseline;padding:7px 0;border-top:1px solid var(--grid-soft)}
+.board li::before{counter-increment:r;content:counter(r);font-family:var(--display);color:var(--grid);min-width:1.6em}
+.board li.me{color:var(--mark);font-weight:700}
+.board .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board .s{font-family:var(--display)}
+
+/* play */
+.hud{display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-top:14px}
+.hud .score{font-family:var(--display);font-size:30px}
+.combo{color:var(--mark);font-weight:700;min-height:1.6em}
+.timer{height:10px;background:var(--grid-soft);margin:8px 0 18px;overflow:hidden}
+.timer i{display:block;height:100%;background:var(--grid);width:100%;transform-origin:left}
+.timer.low i{background:var(--mark)}
+.timer.off{visibility:hidden}
+.qtag{font-size:14px;font-weight:700;color:var(--muted)}
+.qtext{font-weight:700;font-size:21px;margin:4px 0 14px;line-height:1.45}
+.qstage{margin:6px 0 18px}
+.qbox{border:2px solid var(--grid);background:var(--surface);padding:14px;font-size:18px;text-align:center;font-weight:700}
+.options{display:grid;gap:10px}
+.opt{text-align:left;background:var(--surface);border:2px solid var(--grid);padding:15px 16px;font-size:18px;display:flex;gap:12px;align-items:center;border-radius:0;min-height:58px}
+.opt b{font-family:var(--display);font-weight:400;color:var(--grid);min-width:1.2em}
+.opt:hover:not(:disabled){background:var(--grid-soft)}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)} .opt.right b{color:var(--ok)}
+.opt.wrong{border-color:var(--mark);background:var(--mark-soft)} .opt.wrong b{color:var(--mark)}
+.opt:disabled{cursor:default}
+.feedback{margin-top:16px;padding:14px 16px;border:3px solid var(--ok);background:var(--surface)}
+.feedback.bad{border-color:var(--mark)}
+.feedback .big{font-family:var(--display);font-size:28px}
+.feedback.good .big{color:var(--ok)} .feedback.bad .big{color:var(--mark)}
+.pop{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font-family:var(--display);font-size:44px;color:var(--ok);pointer-events:none;animation:pop .9s ease-out forwards;z-index:20}
+@keyframes pop{0%{opacity:0;transform:translate(-50%,-30%) scale(.6)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}100%{opacity:0;transform:translate(-50%,-90%) scale(1)}}
+.shake{animation:shake .35s}
+.fx{position:fixed;inset:0;pointer-events:none;z-index:25;overflow:hidden}
+.gift{position:absolute;left:50%;top:58%;font-size:86px;line-height:1;transform:translate(-50%,-50%);animation:giftUp 1s ease-out forwards}
+@keyframes giftUp{0%{transform:translate(-50%,40%) scale(.3);opacity:0}30%{transform:translate(-50%,-60%) scale(1.15);opacity:1}45%{transform:translate(-50%,-50%) scale(1) rotate(-8deg)}55%{transform:translate(-50%,-50%) rotate(8deg)}65%{transform:translate(-50%,-50%) scale(1.3);opacity:1}100%{transform:translate(-50%,-50%) scale(1.6);opacity:0}}
+.spark{position:absolute;left:50%;top:50%;font-size:26px;opacity:0;animation:burst .9s ease-out forwards;animation-delay:.55s}
+@keyframes burst{0%{opacity:1;transform:translate(-50%,-50%) scale(.4)}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.2) rotate(200deg)}}
+.bonus{position:absolute;left:50%;top:34%;transform:translateX(-50%);font-family:var(--display);font-size:36px;color:var(--mark);white-space:nowrap;text-shadow:0 0 6px var(--surface),0 0 12px var(--surface);animation:pop 1.3s ease-out forwards;animation-delay:.4s;opacity:0}
+.club{position:absolute;left:calc(50% - 40px);top:4%;width:150px;height:325px;filter:drop-shadow(3px 4px 0 rgba(0,0,0,.25));transform-origin:50% 92%;animation:swing .5s cubic-bezier(.6,0,.9,1) forwards}
+@keyframes swing{0%{transform:rotate(-80deg)}75%{transform:rotate(18deg)}88%{transform:rotate(8deg)}100%{transform:rotate(12deg)}}
+.bang{position:absolute;left:50%;top:44%;width:200px;height:200px;transform:translate(-50%,-50%) scale(0);animation:bang .7s ease-out forwards;animation-delay:.38s}
+@keyframes bang{0%{transform:translate(-50%,-50%) scale(0)}40%{transform:translate(-50%,-50%) scale(1.15)}70%{transform:translate(-50%,-50%) scale(1)}100%{transform:translate(-50%,-50%) scale(1);opacity:0}}
+.dizzy{position:absolute;left:50%;top:44%;font-size:28px;animation:dizzy 1s linear forwards;animation-delay:.5s;opacity:0}
+@keyframes dizzy{0%{opacity:1;transform:translate(-50%,-50%) rotate(0) translateX(70px) rotate(0)}100%{opacity:0;transform:translate(-50%,-50%) rotate(360deg) translateX(70px) rotate(-360deg)}}
+.hit{animation:hit .35s .4s}
+@keyframes hit{20%{transform:translate(-8px,6px)}40%{transform:translate(7px,-5px)}60%{transform:translate(-5px,3px)}80%{transform:translate(3px,-2px)}}
+@keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
+
+/* result */
+.bigscore{font-family:var(--display);font-size:clamp(56px,16vw,86px);line-height:1;margin:10px 0 2px}
+.review{list-style:none;padding:0;margin:10px 0 0}
+.review li{padding:10px 0;border-top:1px solid var(--grid-soft);font-size:16px}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:30}
+.confetti i{position:absolute;top:-12px;width:10px;height:14px;animation:fall 2.2s ease-in forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+
+@media (max-width:520px){ .map{grid-template-columns:1fr 1fr} .cats{grid-template-columns:1fr 1fr} .mini{grid-template-columns:1fr} }
+
+/* basic (음운의 기초) */
+.pairs{display:flex;flex-wrap:wrap;gap:12px 14px;justify-content:center;margin:12px 0 4px}
+.pr{text-align:center}
+.pr .sheet{flex-wrap:nowrap}
+.pr .cell{width:36px;font-size:22px}
+.pr p{margin:6px 0 0;font-weight:700}
+.pr p small{font-weight:500;color:var(--muted)}
+.ctab{min-width:0;table-layout:fixed}
+.ctab th,.ctab td{padding:4px 3px;text-align:center;vertical-align:middle;font-size:13px;line-height:1.25}
+.ctab thead th{font-weight:700}
+.ctab tbody th{background:var(--grid-soft);font-weight:700}
+.ctab td{padding:0;height:50px}
+.ctab col.m{width:15%} .ctab col.s{width:11%}
+.cc{all:unset;box-sizing:border-box;display:grid;place-items:center;width:100%;height:100%;min-height:48px;font-family:var(--display);font-size:clamp(22px,6vw,28px);cursor:pointer;position:relative}
+.cc:focus-visible{outline:3px solid var(--ok);outline-offset:-3px}
+.cc:hover{background:var(--grid-soft)}
+.cc.from{color:var(--mark)}
+.cc.from svg{position:absolute;inset:3px;width:calc(100% - 6px);height:calc(100% - 6px);pointer-events:none}
+.cc.from ellipse{fill:none;stroke:var(--mark);stroke-width:3;stroke-dasharray:240;animation:draw .5s ease-out both}
+.cc.to{color:var(--paper)}
+.cc.to.k1{background:var(--c1)} .cc.to.k2{background:var(--c2)} .cc.to.k3{background:var(--c3)} .cc.to.k4{background:var(--c4)}
+.cc.sel{background:var(--ink);color:var(--paper)}
+.ctab.vt td{height:56px}
+.cap{margin-top:10px;padding:12px 14px;border:2px solid var(--grid);background:var(--surface);min-height:3.4em}
+.cap .pairs2{font-size:20px;font-weight:700;margin:2px 0 4px;word-spacing:.3em}
+.cap .prof{font-size:18px}
+.cap .prof b{font-family:var(--display);font-weight:400;font-size:28px;margin-right:8px;vertical-align:-3px}
+.dip{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+.dip > div{display:flex;align-items:center;gap:12px;border:2px solid var(--grid);background:var(--surface);padding:8px 12px}
+.dip > div > b{min-width:7.5em;font-size:15px}
+.dip > div > span{font-family:var(--display);font-size:26px;letter-spacing:.25em}
+.syl{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.syl > div{border:2px solid var(--grid);background:var(--surface);padding:10px 4px;text-align:center}
+.syl .sheet{margin-bottom:6px}
+.syl > div > b{display:block;font-size:13px;margin-top:2px}
+.cnt td{vertical-align:middle}
+.cnt{min-width:0}
+.cnt th,.cnt td{padding:7px 6px}
+.cnt .jm{letter-spacing:.06em;font-weight:700;white-space:nowrap;font-size:15px}
+.cnt .d{font-family:var(--display);font-size:20px;text-align:center;white-space:nowrap}
+.startb{display:inline-block;margin-top:10px}
+.fill{border:2px dashed var(--c1);background:var(--surface);padding:14px;margin-top:16px}
+.fillHead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:18px}
+.fscore{font-family:var(--display);color:var(--c1);font-size:20px}
+.ftab td{padding:2px;height:auto}
+.ftab td.na{background:var(--grid-soft)}
+.fi{width:100%;min-width:34px;height:44px;border:2px solid var(--grid-soft);background:var(--paper);color:var(--ink);text-align:center;font-family:var(--display);font-size:24px;border-radius:0;padding:0}
+.fi.cur{border-color:var(--c1)} .fi.ok{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)} .fi.bad{border-color:var(--mark);background:var(--mark-soft);color:var(--mark)} .fi.shown{color:var(--muted);background:var(--grid-soft)}
+.keypad{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.kp{min-width:44px;height:44px;border:2px solid var(--ink);background:var(--surface);font-family:var(--display);font-size:22px;border-radius:0}
+.kp.del{font-family:var(--body);font-size:18px}
+.hmt td.big{font-family:var(--display);font-size:22px;white-space:nowrap}
+.hmt.ctr td{text-align:center;font-family:var(--display);font-size:21px;white-space:nowrap}
+.hmt{min-width:540px}
+.hmt th{font-size:13px;text-align:center;white-space:nowrap;padding:6px}
+.hmt th .small{font-size:11.5px;font-weight:500}
+.hmt td{font-size:15px;padding:6px 8px}
+.cheonji{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.cheonji div{border:2px solid var(--grid);background:var(--surface);text-align:center;padding:10px 4px;font-size:15px}
+.cheonji b{display:block;font-family:"Noto Sans KR",var(--display);font-size:38px;line-height:1.1}
+.steps4{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.steps4 div{border:2px solid var(--grid);background:var(--surface);padding:10px;font-size:15px}
+.steps4 b{display:inline-block;font-family:var(--display);font-weight:400;font-size:22px;color:var(--grid);margin-right:6px}
+.pt td:first-child{font-family:var(--display);font-size:20px;white-space:nowrap}
+.ex-box table{min-width:0;margin-top:6px}
+.fbstat{margin:14px 0 0;padding:10px 12px;border:2px solid var(--grid-soft);background:var(--surface);font-size:14px;line-height:1.5}
+.fbstat.ok{border-color:var(--ok);color:var(--ok)}
+.fbstat.bad{border-color:var(--mark);color:var(--mark);font-weight:700}
+.ex-box{border-left:4px solid var(--c1);background:var(--c1s);padding:9px 12px;margin-top:10px;font-size:16px}
+.src{font-size:13px;color:var(--muted);white-space:nowrap}
+@media (max-width:520px){ .syl{grid-template-columns:1fr 1fr} }
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important} .pop,.confetti{display:none}}
+</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyD0GoeuaDCJbT00NCPqXt4w38FAjMbnU14",
+  authDomain: "eumwoon-541fa.firebaseapp.com",
+  projectId: "eumwoon-541fa",
+  storageBucket: "eumwoon-541fa.firebasestorage.app",
+  messagingSenderId: "1072010422852",
+  appId: "1:1072010422852:web:ae0880e739326837026a11"
+};
+</script>
+</head>
+<body>
+<main>
+<nav class="steps" id="steps" aria-label="학습 메뉴">
+  <button data-go="basic">바탕 이론 확인하기</button>
+  <button data-go="learn">개념 확인하기</button>
+  <button data-go="mmap">마인드맵</button>
+  <button data-go="explore">예시</button>
+  <button data-go="rules">규정</button>
+  <button data-go="middle">중세</button>
+  <button data-go="plus">플러스 학습</button>
+  <button data-go="home">게임</button>
+</nav>
+
+<!-- LOGIN -->
+<section class="screen" id="login" hidden>
+  <div class="hero" style="margin-top:28px">
+    <h1><span class="sub1">재이미나는</span>음운 변동 마스터 챌린지</h1>
+    <p class="lead">학번과 이름을 넣고 입장하세요.</p>
+    <div class="sheet" id="loginWord" aria-hidden="true"></div>
+    <div class="arrow" aria-hidden="true">↓</div>
+    <div class="sheet draw" id="loginPron" aria-hidden="true"></div>
+  </div>
+  <div class="panel">
+    <div class="who2">
+      <div><label for="lsid">학번</label><input type="text" id="lsid" inputmode="numeric" maxlength="8" placeholder="예: 10315" autocomplete="off"></div>
+      <div><label for="lname">이름</label><input type="text" id="lname" maxlength="10" placeholder="예: 김민준" autocomplete="off"></div>
+    </div>
+    <p class="hint" id="lNote">학습 시간·포인트·약점 기록이 이 이름으로 쌓여 선생님께 전달돼요.</p>
+    <div class="row"><button class="btn" id="loginBtn" style="flex:1;font-size:20px">입장하기 →</button></div>
+  </div>
+  <p class="small" style="text-align:center;margin-top:14px"><button class="link" id="loginTeacher">👩‍🏫 선생님 로그인</button></p>
+  <div class="fbstat" id="fbStat1">🔌 기록 서버 연결 확인 중…</div>
+</section>
+
+<!-- BASIC (음운의 기초) -->
+<section class="screen" id="basic" hidden>
+  <h1>바탕 이론 확인하기</h1>
+  <p class="lead">변동을 배우기 전에, 바뀌는 '소리' 자체부터 알아봐요.</p>
+  <div class="why">
+    <b>🤔 왜 기초부터 볼까?</b>
+    <ul>
+      <li>음운 변동은 <b>"어떤 소리가 어떤 소리로"</b> 바뀌는지예요. 자음 표에서 자리를 알면 변동이 눈에 보여요.</li>
+      <li>비음화는 <b>같은 세로줄에서 아래로</b>(파열음 → 비음), 구개음화는 <b>옆 칸으로</b>(잇몸 → 센입천장) 움직여요.</li>
+      <li><b>시험에서</b> "조음 위치가 바뀐다 / 조음 방법이 바뀐다", "음운의 개수가 줄었다" 같은 선지를 판단하려면 이 표가 꼭 필요해요.</li>
+    </ul>
+  </div>
+
+  <h2>음운이란?</h2>
+  <p>말의 <b>뜻을 구별</b>해 주는 소리의 가장 작은 단위예요.</p>
+  <div id="minPairs"></div>
+  <p class="small muted" style="text-align:center">소리 하나만 바꿨는데 뜻이 달라져요. 그래서 ㅂ·ㅍ·ㅃ, ㅏ·ㅗ는 각각 다른 음운이에요.</p>
+  <div class="mini">
+    <div><b class="k1">분절 음운 = 음소</b>자음 19개 + 모음 21개<br><span class="small muted">하나하나 나눠서 적을 수 있는 소리</span></div>
+    <div><b class="k4">비분절 음운 = 운소</b>소리의 길이<br>눈[눈ː] ❄️ / 눈 👁️ · 밤[밤ː] 🌰 / 밤 🌙<br><span class="small muted">긴소리는 주로 단어의 첫음절에서만 나요 (표준 발음법 제6항)</span></div>
+  </div>
+  <div class="ex-box"><b>기출 속 운소</b> 발음 표기의 <b>ː</b>가 바로 소리의 길이예요.<br>담기[담ː끼] · 닿소[다ː쏘] · 많네[만ː네] · 굵다랗다[국ː따라타] <span class="src">2018년 3월·10월 고3 학평, 2025년 10월 고1</span></div>
+  <div class="ex-box"><b>중세 국어와 연결</b> 중세 국어에서는 소리의 높낮이(성조)도 운소였고, 글자 왼쪽에 점(방점)을 찍어 나타냈어요. <button class="link" data-go="middle">중세 탭</button></div>
+  <p class="small muted">억양은 문장의 뜻을 바꿔요: 밥 먹어. ↘ (평서) / 밥 먹어? ↗ (의문)</p>
+
+  <h2>최소 대립쌍으로 음운 찾기</h2>
+  <p><b>최소 대립쌍</b> = 딱 하나의 소리 때문에 뜻이 갈리는 단어 쌍. 그 하나의 소리가 음운이에요. 살 / 쌀 → ㅅ, ㅆ <span class="src">2019학년도 수능 11번</span></p>
+  <p class="small"><b>해 보기</b> 2019학년도 수능 11번 [A]의 단어 중 두 개를 눌러 최소 대립쌍을 모두 찾아보세요.</p>
+  <div class="words" id="mpWords"></div>
+  <div id="mpResult" class="ex-box" aria-live="polite">단어 두 개를 누르세요.</div>
+  <p class="small" id="mpFound"></p>
+
+  <h2>자음 19개, 표 하나로</h2>
+  <p class="muted small">가로는 <b>어디서</b>(조음 위치), 세로는 <b>어떻게</b>(조음 방법)·<b>얼마나 세게</b>(세기). 칸을 누르면 그 소리를 풀어 줘요.</p>
+  <div class="filters" id="cMode" role="group" aria-label="자음 표에서 변동 보기"></div>
+  <div class="cap" id="cCap" aria-live="polite"></div>
+  <div class="tablewrap"><table class="ctab" id="cTab"></table></div>
+  <p class="hint">파열음·파찰음·마찰음 = 장애음 / 비음·유음 = 공명음(울림소리)</p>
+  <div class="ex-box"><b>기출 속 자음 체계</b><br>· 장애음과 비음을 연달아 발음하기 어려워 비음화가 일어나요. <span class="src">2018년 3월 고3 11~12번 지문</span><br>· 음절 끝의 마찰음·파찰음, 파열음의 거센소리·된소리 → 파열음의 예사소리로 교체 <span class="src">2017학년도 수능 12번</span><br>· 비음화는 인접한 자음과 조음 방법이 같아지는 변동 <span class="src">2017학년도 6월 모평 13번</span></div>
+
+    <div class="fill" id="fillC">
+    <div class="fillHead"><b>✍️ 자음 체계표 외워서 채우기</b><span class="fscore" id="fillCScore"></span></div>
+    <p class="small muted">빈칸을 누르고 아래 자음 버튼을 누르거나 직접 입력하세요. 다 채우면 채점!</p>
+    <div class="tablewrap"><table class="ctab ftab" id="fillCTab"></table></div>
+    <div class="keypad" id="fillCPad"></div>
+    <div class="row"><button class="btn" data-fill="C:check">채점하기</button><button class="btn ghost" data-fill="C:reset">다시</button><button class="btn ghost" data-fill="C:show">정답 보기</button></div>
+    <p class="small" id="fillCMsg" aria-live="polite"></p>
+  </div>
+
+  <h2>모음 21개, 단모음 10 + 이중 11</h2>
+  <p class="muted small">단모음은 <b>혀의 앞뒤</b>, <b>혀의 높이</b>, <b>입술 모양</b>으로 나눠요. 발음하는 동안 입 모양이 변하지 않아요.</p>
+  <div class="filters" id="vMode" role="group" aria-label="모음 표에서 변동 보기"></div>
+  <div class="cap" id="vCap" aria-live="polite"></div>
+  <div class="tablewrap"><table class="ctab vt" id="vTab"></table></div>
+  <p class="hint">ㅚ, ㅟ는 이중 모음으로 발음해도 돼요 (표준 발음법 제4항 붙임).</p>
+
+    <div class="fill" id="fillV">
+    <div class="fillHead"><b>✍️ 모음 체계표 외워서 채우기</b><span class="fscore" id="fillVScore"></span></div>
+    <p class="small muted">빈칸을 누르고 아래 모음 버튼을 누르거나 직접 입력하세요. 다 채우면 채점!</p>
+    <div class="tablewrap"><table class="ctab ftab" id="fillVTab"></table></div>
+    <div class="keypad" id="fillVPad"></div>
+    <div class="row"><button class="btn" data-fill="V:check">채점하기</button><button class="btn ghost" data-fill="V:reset">다시</button><button class="btn ghost" data-fill="V:show">정답 보기</button></div>
+    <p class="small" id="fillVMsg" aria-live="polite"></p>
+  </div>
+
+  <h3 style="margin-top:22px">이중 모음 = 반모음 + 단모음</h3>
+  <div class="dip">
+    <div><b class="k1">[j] + 단모음</b><span>ㅑㅕㅛㅠㅒㅖ</span></div>
+    <div><b class="k1">[w] + 단모음</b><span>ㅘㅝㅙㅞ</span></div>
+    <div><b class="k1">[ɰ] + ㅣ</b><span>ㅢ</span></div>
+  </div>
+  <p class="small" style="margin-top:10px">반모음은 혼자서는 소리 나지 못해 꼭 단모음과 함께 나와요. 이 [j], [w]가 바로 <button class="tchip k1" data-type="반모음화">반모음화 <small>교체</small></button><button class="tchip k3" data-type="반모음 첨가">반모음 첨가 <small>첨가</small></button>의 주인공이에요.</p>
+
+  <h2>음절의 구조</h2>
+  <p class="muted small">음절 = 한 번에 소리 내는 덩어리. 중심에는 꼭 모음이 있어요.</p>
+  <div class="syl" id="sylBox"></div>
+  <div class="panel">
+    <b>받침 자리의 두 가지 약속</b>
+    <p>① 자음은 <b>하나만</b> 소리 나요. 겹받침이면 하나가 사라져요. <button class="tchip k2" data-type="자음군 단순화">자음군 단순화 <small>탈락</small></button></p>
+    <p>② <b>ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅇ</b> 7개만 소리 나요. 나머지는 이 중 하나로 바뀌어요. <button class="tchip k1" data-type="음절의 끝소리 규칙">음절의 끝소리 규칙 <small>교체</small></button></p>
+    <p class="small muted">아, 악의 첫 'ㅇ'은 소리가 없어요. 자리만 채우는 글자라 음운으로 세지 않아요.</p>
+  </div>
+  <div class="ex-box"><b>기출</b> 값도[갑또]: 음절 끝에 둘 이상의 자음이 오지 못하기 때문에 일어난 변동 <span class="src">2017학년도 6월 모평 13번</span></div>
+
+  <h2>음운 개수 세기</h2>
+  <p class="muted small">글자 수가 아니라 <b>소리 수</b>로 세요. 변동 4유형마다 개수 변화가 정해져 있어요.</p>
+  <div class="tablewrap"><table class="cnt" id="cntTab"></table></div>
+
+  <div class="row"><button class="btn" data-go="learn">음운 변동 배우러 가기</button></div>
+</section>
+
+<!-- LEARN -->
+<section class="screen" id="learn">
+  <div class="hero">
+    <h1><span class="sub1">재이미나는</span>음운 변동 마스터 챌린지</h1>
+    <p class="hello" id="hello"></p>
+    <p class="lead">쓴 대로 소리 나지 않는 곳, 빨간펜으로 찾아라!</p>
+    <div class="sheet" id="heroWord" aria-hidden="true"></div>
+    <div class="arrow" aria-hidden="true">↓</div>
+    <div class="sheet draw" id="heroPron" aria-label="숙녀는 숭녀로 발음됩니다"></div>
+    <button class="link startb" data-go="basic">처음이라면 📚 바탕 이론 확인하기부터!</button>
+  </div>
+
+  <h2>변동은 딱 4가지</h2>
+  <div class="cats" id="cats"></div>
+
+  <h2>하나로 이어진 4단계</h2>
+  <div class="chain">
+    <button class="ring" onclick="document.getElementById('map').scrollIntoView({behavior:'smooth'})"><b>① 소리</b>음운 변동<span>왜 바뀌나</span></button>
+    <button class="ring" data-go="rules"><b>② 읽기</b>표준 발음법<span>어떻게 읽나</span></button>
+    <button class="ring" data-go="rules"><b>③ 쓰기</b>한글 맞춤법<span>어떻게 쓰나</span></button>
+    <button class="ring" data-go="middle"><b>④ 뿌리</b>중세 국어<span>왜 예외가 생겼나</span></button>
+  </div>
+  <p class="small muted" style="margin-top:8px"><button class="link" data-go="mmap">🗺 마인드맵으로 전체 보기</button><br>국물 → <b>비음화</b> → [궁물]로 읽고(표준 발음법 제18항) → '국물'로 써요(한글 맞춤법 제1항). 한 단어에 네 단계가 다 들어 있어요. 시험도 이 연결을 물어요.</p>
+
+  <h2>변동 15가지 확인하기</h2>
+  <p class="muted small">칸을 누르면 표준 발음법·한글 맞춤법·중세 국어까지 한 번에 이어져요.</p>
+  <div class="map" id="map"></div>
+  <div id="hub"></div>
+
+  <h2>동화 한눈에</h2>
+  <p class="muted small">비음화·유음화·구개음화 = 이웃 소리를 닮는 동화</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th></th><th>완전 (똑같아짐)</th><th>불완전 (비슷해짐)</th></tr></thead>
+    <tbody>
+      <tr><th>순행 → <br><span class="small muted">앞이 뒤를 바꿈</span></th><td>물약[물략]<br>짧네[짤레]</td><td>종로[종노]*</td></tr>
+      <tr><th>역행 ← <br><span class="small muted">뒤가 앞을 바꿈</span></th><td>밥물[밤물]<br>분류[불류]</td><td>국물[궁물]<br>같이[가치]</td></tr>
+      <tr><th>상호 ↔ <br><span class="small muted">서로 바꿈</span></th><td>—</td><td>생략[생냑]</td></tr>
+    </tbody>
+  </table></div>
+  <p class="hint">* 기출 예시가 없어 교과서 예를 넣었어요.</p>
+
+  <h2>헷갈림 주의</h2>
+  <div class="mini">
+    <div><b class="k3">반모음 첨가 = 첨가</b>피어 → [피여]<br>ㅍ ㅣ ㅓ → ㅍ ㅣ <b class="k3" style="display:inline">j</b> ㅓ<br><span class="small muted">ㅣ가 남음 · 음운 +1 · 음절 그대로</span></div>
+    <div><b class="k1">반모음화 = 교체</b>그리어 → 그려<br>ㄹ ㅣ ㅓ → ㄹ <b class="k1" style="display:inline">j</b> ㅓ<br><span class="small muted">ㅣ가 바뀜 · 음운 그대로 · 음절 −1</span></div>
+  </div>
+  <div class="panel" style="border-color:var(--c1)"><b class="k1">보이어 → 보여, 축약일까 교체일까?</b><br>축약으로 보는 견해도 있지만, <b>수능 기준은 교체</b>예요.<br><span class="small">단모음 ㅣ가 반모음 [j]로 바뀌었을 뿐 → ㅣ ㅓ(2개) → j ㅓ(2개), 음운 수 그대로</span><br><span class="small muted">음절이 줄어 축약처럼 보이는 함정! 음절 수가 아니라 음운 수로 판단해요.</span></div>
+
+  <div class="ex-box" style="margin-top:12px"><b>⭐ 사이시옷 발음: 원칙과 허용</b><br>ㄱ·ㄷ·ㅂ·ㅅ·ㅈ 앞의 사이시옷은 <b>뒷말을 된소리로만 내는 것이 원칙</b>, 사이시옷을 [ㄷ]으로 내는 것은 <b>허용</b>이에요. <b>둘 다 표준 발음!</b><div class="tablewrap"><table><thead><tr><th>단어</th><th>원칙</th><th>허용</th></tr></thead><tbody><tr><td>빗길</td><td><b>[비낄]</b></td><td>[빋낄]</td></tr><tr><td>바닷가</td><td><b>[바다까]</b></td><td>[바닫까]</td></tr><tr><td>냇가</td><td><b>[내ː까]</b></td><td>[낻ː까]</td></tr><tr><td>콧등</td><td><b>[코뜽]</b></td><td>[콛뜽]</td></tr></tbody></table></div><b>왜 [ㄷ] 없이가 원칙일까?</b> 사이시옷의 ㅅ은 원래 있던 소리가 아니라 <b>"뒷말이 된소리로 난다"는 표시</b>예요. 실제로 말할 때도 [ㄷ] 받침은 거의 들리지 않고 된소리만 나요.<br><b>분석할 때</b> 허용 발음 [바닫까]는 ㅅ→[ㄷ](음절의 끝소리 규칙) + ㄱ→ㄲ(된소리되기)로, 원칙 발음 [바다까]는 된소리되기(사잇소리)로 설명해요.<br><b>기출</b> 2025년 3월 고1 15번: 비 + 길 → [비낄]<br><button class="link" data-rule="제30항">표준 발음법 제30항 보기</button></div>
+
+  <h2>표기에도 반영될까?</h2>
+  <div class="mini">
+    <div><b class="k3">O 표기에 반영</b>ㄹ 탈락 (화살), ㅡ 탈락 (따라), 동음 탈락 (갔다), 반모음화 (그려), 모음 축약 (돼)<br><span class="small muted">+ 거센소리 '간편케' (한글 맞춤법 제40항)</span></div>
+    <div><b class="k2">X 발음에서만</b>끝소리 규칙, 비음화, 유음화, 구개음화, 된소리되기, 자음군 단순화, ㅎ 탈락, ㄴ 첨가, 거센소리되기<br><span class="small muted">형태를 밝혀 적기 때문 (한글 맞춤법 제1항)</span></div>
+  </div>
+
+  <div class="row"><button class="btn" data-go="mmap">🗺 마인드맵으로 정리</button><button class="btn ghost" data-go="explore">예시로 확인하기</button></div>
+</section>
+
+<!-- MINDMAP -->
+<section class="screen" id="mmap" hidden>
+  <h1>마인드맵</h1>
+  <div class="filters" id="mmKind" role="group" aria-label="마인드맵 고르기"></div>
+  <p class="lead" id="mmLead"></p>
+  <div class="filters" id="mmMode" role="group" aria-label="마인드맵 보기 방식"></div>
+  <div class="mmwrap" id="mindmap"></div>
+  <p class="muted small">칸을 누르면 그 개념의 자세한 연결로 가요. 휴대폰에서는 옆으로 밀어 보세요.</p>
+  <div class="row"><button class="btn" data-go="learn">개념 확인하기</button></div>
+</section>
+
+<!-- EXPLORE -->
+<section class="screen" id="explore" hidden>
+  <h1>예시 탐구</h1>
+  <p class="lead">단어를 고르고, 먼저 소리 내어 읽어 보세요.</p>
+  <div class="filters" id="examFilters" role="group" aria-label="시험지 고르기"></div>
+  <div class="filters" id="filters" role="group" aria-label="변동 고르기" style="margin-top:0"></div>
+  <div class="words" id="words"></div>
+  <div id="detail" aria-live="polite"></div>
+</section>
+
+<!-- RULES -->
+<section class="screen" id="rules" hidden>
+  <h1>표준 발음법·한글 맞춤법</h1>
+  <p class="lead">같은 변동을 '어떻게 읽나(표준 발음법)'와 '어떻게 쓰나(한글 맞춤법)'로 나눠 봐요.</p>
+  <div class="why">
+    <b>🤔 왜 음운 변동이랑 같이 공부할까?</b>
+    <ul>
+      <li><b>음운 변동</b>은 소리가 바뀌는 '원리', <b>표준 발음법</b>은 그 원리로 '이렇게 읽자'고 정한 약속이에요. 원리를 알면 조항이 저절로 이해돼요.</li>
+      <li><b>한글 맞춤법</b>은 바뀐 소리를 '쓸지 말지' 정해요. [궁물]은 '국물'로, '삽니다'는 바뀐 대로 써요. 어떤 변동이 표기에 반영되는지가 갈려요.</li>
+      <li><b>시험에서</b> "표준 발음인가?", "표기에 반영되는가?"를 함께 묻는 선지가 자주 나와요. (2025년 9월 고1 11번, 2019학년도 6월 모평 14번, 2018년 3월 고3 12번)</li>
+    </ul>
+  </div>
+  <div class="filters" id="ruleMode" role="group" aria-label="규정 고르기"></div>
+  <div class="filters" id="ruleJump" role="group" aria-label="변동별로 이동"></div>
+  <div id="rulesBody"></div>
+  <p class="hint">국립국어원 「표준 발음법」, 「한글 맞춤법」에서 음운 변동과 관련된 조항만 골라 요약했어요. '원문 보기'로 조항 문구를 확인하세요.</p>
+</section>
+
+<!-- MIDDLE -->
+<section class="screen" id="middle" hidden>
+  <h1>중세 국어의 음운</h1>
+  <p class="lead">지금의 규칙과 불규칙, 그 뿌리를 찾아요.</p>
+  <div class="why">
+    <b>🤔 왜 중세 국어까지 볼까?</b>
+    <ul>
+      <li>외우기 힘든 <b>예외의 이유</b>가 여기 있어요. 돕다→도와(ㅸ), 짓다→지어(ㅿ), 소나무(ㄹ 탈락), 숟가락(ㄷ 받침), 살코기(ㅎ 종성)는 모두 옛 소리의 흔적이에요.</li>
+      <li>이유를 알면 불규칙이 <b>'이유 있는 규칙'</b>이 돼서 오래 기억돼요.</li>
+      <li><b>시험에서</b> 문법 마지막 문항은 거의 중세 국어예요. 지금의 음운 변동을 알면 옛 자료가 훨씬 쉽게 읽혀요.</li>
+    </ul>
+  </div>
+  <div class="filters" id="hmJump">
+    <button class="chip" data-hm="hm1">창제</button><button class="chip" data-hm="hm2">제자 원리</button><button class="chip" data-hm="hm3">초성 체계표</button><button class="chip" data-hm="hm4">중성 체계표</button><button class="chip" data-hm="hm5">운용법</button><button class="chip" data-hm="hm6">음운 변화</button>
+  </div>
+  <div id="hunmin">
+  <h2 id="hm1">훈민정음 창제</h2>
+  <div class="mini">
+    <div><b class="k1">언제 · 누가</b>1443년 세종 창제, 1446년 반포<br><span class="small muted">원리를 풀이한 책: 『훈민정음』 해례본</span></div>
+    <div><b class="k1">창제 정신</b><b style="display:inline">자주</b>: 중국과 다른 우리말<br><b style="display:inline">애민</b>: 어린 백성을 위해<br><b style="display:inline">실용</b>: 쉽게 익혀 날마다 쓰게</div>
+  </div>
+  <div class="ex-box"><b>기출</b> 훈민정음 서문 "<span class="old">나랏 말ᄊᆞ미 中國에 달아…</span>" — 자주·애민·실용 정신이 드러나요. <span class="src">2017년 7월 고3 15번</span></div>
+  <p class="small"><b>핵심</b> 글자를 <b>발음 기관</b>과 <b>천지인</b>을 본떠 만들고, 획을 더해 소리의 세기를 나타냈어요. → 지금 배우는 <b>자음·모음 체계</b>의 뿌리!</p>
+
+  <h2 id="hm2">제자 원리</h2>
+  <h3>초성(자음) 17자: 상형 → 가획 → 이체</h3>
+  <div class="tablewrap"><table class="hmt">
+    <thead><tr><th>상형 (기본자)</th><th>무엇을 본떴나</th><th>가획 (획 더하기)</th><th>이체</th></tr></thead>
+    <tbody>
+      <tr><td class="big">ㄱ</td><td>혀뿌리가 목구멍을 막는 모양</td><td class="big">ㄱ → ㅋ</td><td class="big old">ㆁ</td></tr>
+      <tr><td class="big">ㄴ</td><td>혀끝이 윗잇몸에 닿는 모양</td><td class="big">ㄴ → ㄷ → ㅌ</td><td class="big">ㄹ</td></tr>
+      <tr><td class="big">ㅁ</td><td>입 모양</td><td class="big">ㅁ → ㅂ → ㅍ</td><td></td></tr>
+      <tr><td class="big">ㅅ</td><td>이 모양</td><td class="big">ㅅ → ㅈ → ㅊ</td><td class="big old">ㅿ</td></tr>
+      <tr><td class="big">ㅇ</td><td>목구멍 모양</td><td class="big">ㅇ → <span class="old">ㆆ</span> → ㅎ</td><td></td></tr>
+    </tbody>
+  </table></div>
+  <p class="small">· <b>가획</b>: 소리가 세질수록 획을 더해요 (ㄴ → ㄷ → ㅌ). · <b>이체</b>: 획을 더했지만 세지는 원리와 상관없는 글자 (<span class="old">ㆁ</span>, ㄹ, <span class="old">ㅿ</span>)</p>
+  <h3>중성(모음) 11자: 천지인 → 합성</h3>
+  <div class="cheonji">
+    <div><b class="old">ㆍ</b>하늘(天)<br><span class="small muted">둥근 모양</span></div>
+    <div><b>ㅡ</b>땅(地)<br><span class="small muted">평평한 모양</span></div>
+    <div><b>ㅣ</b>사람(人)<br><span class="small muted">서 있는 모양</span></div>
+  </div>
+  <p class="small">· <b>초출자</b>: 기본자를 한 번 합성 → ㅗ ㅏ ㅜ ㅓ · <b>재출자</b>: 두 번 합성 → ㅛ ㅑ ㅠ ㅕ</p>
+  <h3>종성(받침): 종성부용초성</h3>
+  <p class="small">받침은 따로 만들지 않고 <b>초성 글자를 다시 썼어요</b>. 실제 발음은 8개(<button class="link" data-mid="m-8">8종성법</button>) → 지금은 7개(<button class="link" data-type="음절의 끝소리 규칙">음절의 끝소리 규칙</button>)</p>
+
+  <h2 id="hm3">초성 체계표 (오음 · 청탁)</h2>
+  <p class="small muted">가로 = 소리 나는 자리(오음), 세로 = 소리의 세기(청탁). 현대 자음 체계표의 뿌리예요.</p>
+  <div class="tablewrap"><table class="hmt ctr">
+    <thead><tr><th></th><th>아음<br><span class="small">어금닛소리</span></th><th>설음<br><span class="small">혓소리</span></th><th>순음<br><span class="small">입술소리</span></th><th>치음<br><span class="small">잇소리</span></th><th>후음<br><span class="small">목구멍소리</span></th><th>반설음</th><th>반치음</th></tr></thead>
+    <tbody>
+      <tr><th>전청<br><span class="small">예사소리</span></th><td>ㄱ</td><td>ㄷ</td><td>ㅂ</td><td>ㅈ ㅅ</td><td class="old">ㆆ</td><td></td><td></td></tr>
+      <tr><th>차청<br><span class="small">거센소리</span></th><td>ㅋ</td><td>ㅌ</td><td>ㅍ</td><td>ㅊ</td><td>ㅎ</td><td></td><td></td></tr>
+      <tr><th>전탁<br><span class="small">된소리</span></th><td>ㄲ</td><td>ㄸ</td><td>ㅃ</td><td>ㅉ ㅆ</td><td class="old">ㆅ</td><td></td><td></td></tr>
+      <tr><th>불청불탁<br><span class="small">울림소리</span></th><td class="old">ㆁ</td><td>ㄴ</td><td>ㅁ</td><td></td><td>ㅇ</td><td>ㄹ</td><td class="old">ㅿ</td></tr>
+    </tbody>
+  </table></div>
+  <div class="ex-box"><b>현대 자음 체계와 연결</b><br>아음 ≈ 여린입천장소리 · 설음 ≈ 잇몸소리 · 순음 = 입술소리 · 치음 ≈ 잇몸·센입천장소리 · 후음 ≈ 목청소리<br>전청 → 예사소리 · 차청 → 거센소리 · 전탁 → 된소리 · 불청불탁 → 비음·유음(공명음) <button class="link" data-go="basic">현대 자음 체계표 보기</button></div>
+  <p class="small muted">초성 17자에는 전탁(ㄲ ㄸ ㅃ ㅉ ㅆ <span class="old">ㆅ</span>)이 들어가지 않아요. 전탁은 병서(나란히 쓰기)로 만들었어요.</p>
+
+  <h2 id="hm4">중성 체계표</h2>
+  <div class="tablewrap"><table class="hmt ctr">
+    <thead><tr><th></th><th>양성 모음</th><th>음성 모음</th><th>중성 모음</th></tr></thead>
+    <tbody>
+      <tr><th>기본자</th><td class="old">ㆍ</td><td>ㅡ</td><td>ㅣ</td></tr>
+      <tr><th>초출자</th><td>ㅗ ㅏ</td><td>ㅜ ㅓ</td><td></td></tr>
+      <tr><th>재출자</th><td>ㅛ ㅑ</td><td>ㅠ ㅕ</td><td></td></tr>
+    </tbody>
+  </table></div>
+  <div class="ex-box"><b>왜 중요할까?</b> 양성은 양성끼리, 음성은 음성끼리 어울리는 <button class="link" data-mid="m-vh">모음 조화</button>의 바탕이에요. <span class="old">ㆍ</span>는 뒤에 사라졌어요(<button class="link" data-mid="m-arae">ㆍ의 소실</button>). 재출자 ㅛ ㅑ ㅠ ㅕ는 지금의 이중 모음([j] + 단모음)이에요 → <button class="link" data-type="반모음화">반모음</button></div>
+
+  <h2 id="hm5">운용법: 글자를 쓰는 방법</h2>
+  <div class="tablewrap"><table class="hmt">
+    <thead><tr><th>방법</th><th>내용</th><th>예</th></tr></thead>
+    <tbody>
+      <tr><td><b>병서</b></td><td>초성을 나란히 씀 · 같은 글자 = 각자 병서 / 다른 글자 = 합용 병서</td><td>ㄲ ㄸ ㅃ ㅆ / ㅄ ㅳ (<button class="link" data-mid="m-cluster">어두 자음군</button>)</td></tr>
+      <tr><td><b>연서</b></td><td>입술소리 아래에 ㅇ을 이어 씀 (가벼운 입술소리)</td><td class="old">ㅸ ㅱ ㆄ ㅹ <button class="link" data-mid="m-b">ㅸ의 소실</button></td></tr>
+      <tr><td><b>부서</b></td><td>중성을 초성 아래(ㆍ ㅡ ㅗ ㅜ …) 또는 오른쪽(ㅣ ㅏ ㅓ …)에 붙여 씀</td><td>고, 가</td></tr>
+      <tr><td><b>성음법</b></td><td>초성 + 중성(+ 종성)이 합쳐져야 소리(음절)가 됨</td><td>ㄱ + ㅏ → 가</td></tr>
+      <tr><td><b>사성법</b></td><td>글자 왼쪽 점(방점)으로 소리의 높낮이(성조) 표시 · 거성 1점, 상성 2점, 평성 없음</td><td>→ 운소 <button class="link" data-go="basic">바탕 이론</button></td></tr>
+    </tbody>
+  </table></div>
+  </div>
+  <h2 id="hm6">중세 국어의 음운 변화</h2>
+  <div id="middleBody"></div>
+  <p class="hint">옛한글이 네모 칸으로 보이면 기기에 옛한글 글꼴이 없는 경우예요. 괄호 속 현대어로 확인하세요.</p>
+</section>
+
+<!-- PLUS -->
+<section class="screen" id="plus" hidden>
+  <h1>플러스 학습</h1>
+  <p class="lead">수능·모의평가 음운 문제에 자주 나오지만 앞 탭에서 다루지 않은 내용이에요.</p>
+  <div class="filters" id="plJump">
+    <button class="chip" data-pl="pl1">변동의 조건</button><button class="chip" data-pl="pl2">변동 순서</button><button class="chip" data-pl="pl3">연음</button><button class="chip" data-pl="pl4">겹받침</button><button class="chip" data-pl="pl5">이중 모음 발음</button><button class="chip" data-pl="pl6">소리의 길이</button><button class="chip" data-pl="pl7">비표준 동화</button><button class="chip" data-pl="pl8">두음 법칙</button><button class="chip" data-pl="pl9">문제 푸는 순서</button>
+  </div>
+  <div id="plusBody">
+
+  <h2 id="pl1">① 변동이 일어나는 조건</h2>
+  <div class="mini">
+    <div><b class="k1">음운 조건만으로 일어나요</b>소리 환경만 맞으면 <b>반드시</b> 일어나요.<br><span class="small">국밥[국빱] · 국물[궁물] · 놓고[노코]</span></div>
+    <div><b class="k2">형태소 조건이 필요해요</b>같은 소리 환경이어도 <b>단어의 종류</b>에 따라 달라요.<br><span class="small">(신을) 신고[신ː꼬] ↔ 신고(申告)[신고]<br>안다[안ː따] ↔ 안기다[안기다] (피동 '-기-')</span></div>
+  </div>
+  <div class="ex-box"><b>기출</b> 국밥은 반드시 [국빱], '(신을) 신고'는 용언 어간 + 어미라는 조건이 있어야 [신ː꼬] <span class="src">2018년 3월 고3 11~12번 지문</span><br><b>관련</b> 표준 발음법 제24항(어간 받침 ㄴ·ㅁ 뒤 어미), 제24항 다만(피동·사동 '-기-'는 예외) <button class="link" data-rule="제24항">제24항 보기</button></div>
+
+  <h2 id="pl2">② 변동이 일어나는 순서</h2>
+  <p class="small muted">한 단어에 변동이 여러 번 일어나면 <b>순서</b>가 결과를 바꿔요.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>단어</th><th>순서</th><th>포인트</th></tr></thead>
+    <tbody>
+      <tr><td><b>꽂힌</b>[꼬친]</td><td>ㅈ+ㅎ → ㅊ (거센소리되기)</td><td>축약이 먼저라 <b>끝소리 규칙은 일어나지 않아요</b> <span class="src">2017학년도 수능 12번</span></td></tr>
+      <tr><td><b>닫히다</b>[다치다]</td><td>ㄷ+ㅎ → ㅌ (축약) → ㅊ (구개음화)</td><td>축약 다음 교체 <span class="src">2025년 6월 고1 14번 '닫힌'</span></td></tr>
+      <tr><td><b>색연필</b>[생년필]</td><td>ㄴ 첨가 → ㄱ → ㅇ (비음화)</td><td>첨가가 먼저 있어야 비음화가 생겨요</td></tr>
+      <tr><td><b>짧네</b>[짤레]</td><td>ㄼ → ㄹ (자음군 단순화) → ㄴ → ㄹ (유음화)</td><td>[짬네]는 비표준 <span class="src">2019학년도 6월 모평 14번</span></td></tr>
+      <tr><td><b>긁는</b>[긍는]</td><td>ㄺ → ㄱ (자음군 단순화) → ㄱ → ㅇ (비음화)</td><td>[글른]은 비표준 <span class="src">2019학년도 6월 모평 14번</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="pl3">③ 연음은 음운 변동이 아니에요</h2>
+  <p>연음 = 받침이 뒤 음절 첫소리로 <b>자리만 옮기는 것</b>. 음운이 바뀌지 않아 음운 변동이 아니에요.</p>
+  <div class="mini">
+    <div><b class="k3">형식 형태소(조사·어미·접사) 앞</b>받침이 <b>그대로</b> 넘어가요.<br><span class="small">옷이[오시] · 밭에[바테] · 꽃을[꼬츨]</span></div>
+    <div><b class="k2">실질 형태소(단어) 앞</b><b>대표음으로 바꾼 뒤</b> 넘어가요 → 끝소리 규칙이 먼저!<br><span class="small">겉옷[거돋] · 옷 안[오단] · 헛웃음[허두슴]</span></div>
+  </div>
+  <div class="ex-box"><b>기출</b> '낱'에 조사 '으로' → [나트로], 어근 '알' → [나달] <span class="src">2017년 10월 고3 12번</span><br><b>예외</b> 맛있다[마딛따/마싣따], 멋있다[머딛따/머싣따]는 둘 다 표준 발음 (표준 발음법 제15항 다만) <button class="link" data-rule="제15항">제15항 보기</button></div>
+
+  <h2 id="pl4">④ 겹받침 한눈에</h2>
+  <div class="tablewrap"><table class="pt">
+    <thead><tr><th>겹받침</th><th>자음 앞·끝</th><th>예</th><th>모음(조사·어미) 앞</th></tr></thead>
+    <tbody>
+      <tr><td>ㄳ</td><td>[ㄱ]</td><td>넋[넉]</td><td>넋이[넉씨]</td></tr>
+      <tr><td>ㄵ</td><td>[ㄴ]</td><td>앉다[안따]</td><td>앉아[안자]</td></tr>
+      <tr><td>ㄶ</td><td>[ㄴ] (+ㅎ 축약)</td><td>많다[만ː타]</td><td>많아[마ː나]</td></tr>
+      <tr><td>ㄺ</td><td>[ㄱ] · <b>용언은 ㄱ 앞 [ㄹ]</b></td><td>닭[닥] · 맑게[말께]</td><td>닭을[달글]</td></tr>
+      <tr><td>ㄻ</td><td>[ㅁ]</td><td>삶[삼ː]</td><td>삶이[살미]</td></tr>
+      <tr><td>ㄼ</td><td>[ㄹ] · <b>밟-, 넓죽- [ㅂ]</b></td><td>여덟[여덜] · 밟다[밥ː따]</td><td>넓은[널븐]</td></tr>
+      <tr><td>ㄽ · ㄾ</td><td>[ㄹ]</td><td>외곬[외골] · 핥다[할따]</td><td>핥아[할타]</td></tr>
+      <tr><td>ㄿ</td><td>[ㅂ]</td><td>읊다[읍따]</td><td>읊어[을퍼]</td></tr>
+      <tr><td>ㅀ</td><td>[ㄹ] (+ㅎ 축약)</td><td>싫다[실타]</td><td>싫어[시러]</td></tr>
+      <tr><td>ㅄ</td><td>[ㅂ]</td><td>값[갑]</td><td>값을[갑쓸]</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small">· 모음 앞에서는 <b>뒤 자음만 넘어가고</b>, 넘어간 ㅅ은 [ㅆ] (표준 발음법 제14항) · 앞 자음이 남는 것: ㄳ ㄵ ㄼ ㄽ ㄾ ㅄ / 뒤 자음이 남는 것: ㄺ ㄻ ㄿ</p>
+
+  <h2 id="pl5">⑤ 이중 모음의 발음 (표준 발음법 제4·5항)</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>규정</th><th>예</th></tr></thead>
+    <tbody>
+      <tr><td>용언 활용형의 '져, 쪄, 쳐'는 [저, 쩌, 처]</td><td>가져[가저] · 쪄[쩌] · 다쳐[다처]</td></tr>
+      <tr><td>'예, 례' 외의 'ㅖ'는 [ㅔ]도 허용</td><td>시계[시계/시게] · 혜택[혜ː택/헤ː택]</td></tr>
+      <tr><td>자음 + 'ㅢ'는 [ㅣ]</td><td>희망[히망] · 무늬[무니] · 띄어쓰기[띠어쓰기]</td></tr>
+      <tr><td>첫음절 외의 '의'는 [ㅣ], 조사 '의'는 [ㅔ]도 허용</td><td>주의[주의/주이] · 우리의[우리의/우리에]</td></tr>
+      <tr><td>ㅚ, ㅟ는 이중 모음 발음도 허용</td><td>외국[외ː국/웨ː국] · 위[위]</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="pl6">⑥ 소리의 길이 (표준 발음법 제6·7항)</h2>
+  <div class="mini">
+    <div><b class="k4">긴소리는 첫음절에서만</b>눈보라[눈ː보라] ↔ 첫눈[천눈]<br>말씨[말ː씨] ↔ 참말[참말]</div>
+    <div><b class="k4">모음 어미 앞에서 짧아짐</b>단음절 용언 어간 + 모음 어미 → 짧게<br>감다[감ː따] → 감으니[가므니]<br>밟다[밥ː따] → 밟으면[발브면]<br><span class="small muted">예외: 끌어[끄ː러], 없으니[업ː쓰니] 등</span></div>
+  </div>
+  <p class="small">→ 소리의 길이는 <button class="link" data-go="basic">운소(비분절 음운)</button>예요.</p>
+
+  <h2 id="pl7">⑦ 표준 발음이 아닌 동화</h2>
+  <div class="mini">
+    <div><b class="k2">조음 위치 동화 ✕</b>감기[강기] · 옷감[옥깜] · 문법[뭄뻡] · 꽃밭[꼽빧]<br><span class="small">표준 발음법 제21항: 비음화·유음화 말고는 인정 안 함</span><br><button class="link" data-rule="제21항">제21항 보기</button></div>
+    <div><b class="k2">'ㅣ' 모음 역행 동화 ✕</b>아기[애기] · 먹이다[메기다]<br><span class="small">다만 '-내기(풋내기), 냄비, 동댕이치다'는 표준어로 인정 (표준어 규정 제9항)</span></div>
+  </div>
+
+  <h2 id="pl8">⑧ 두음 법칙 (한글 맞춤법 제10~12항)</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>단어 첫머리</th><th>예</th></tr></thead>
+    <tbody>
+      <tr><td>녀·뇨·뉴·니 → 여·요·유·이</td><td>여자, 연세, 요소, 익명</td></tr>
+      <tr><td>랴·려·례·료·류·리 → 야·여·예·요·유·이</td><td>양심, 역사, 예의, 이발</td></tr>
+      <tr><td>라·래·로·뢰·루·르 → 나·내·노·뇌·누·느</td><td>낙원, 내일, 노인</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small">· 첫머리가 아니면 그대로: 남녀, 지리, 쾌락 · 모음이나 ㄴ 받침 뒤 '렬, 률' → '열, 율': 나열, 비율 · 합성어·접두사 뒤도 적용: 신여성, 남존여비<br>· 중세 국어에는 두음 법칙이 없었어요: 니르니라 → 이르니라 <button class="link" data-mid="m-palatal">중세 카드</button></p>
+
+  <h2 id="pl9">⑨ 음운 변동 문제 푸는 순서</h2>
+  <div class="steps4">
+    <div><b>1</b>표기와 발음을 나란히 써요</div>
+    <div><b>2</b>음운 단위로 쪼개요 (초성 ㅇ은 빼요)</div>
+    <div><b>3</b>바뀐 곳마다 교체·탈락·첨가·축약을 표시해요</div>
+    <div><b>4</b>개수·횟수를 세요 (교체 0, 탈락 −1, 첨가 +1, 축약 −1)</div>
+  </div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>예</th><th>과정</th><th>결과</th></tr></thead>
+    <tbody>
+      <tr><td><b>흙하고</b> → [흐카고]</td><td>ㄺ → ㄱ (탈락) → ㄱ+ㅎ → ㅋ (축약)</td><td>음운 −2</td></tr>
+      <tr><td><b>저녁연기</b> → [저녕년기]</td><td>ㄴ 첨가 → ㄱ → ㅇ (교체)</td><td>음운 +1</td></tr>
+      <tr><td><b>맡는</b> → [만는]</td><td>ㅌ → ㄷ (교체) → ㄷ → ㄴ (교체)</td><td>교체 2번, 음운 그대로</td></tr>
+      <tr><td><b>흙일</b> → [흥닐]</td><td>ㄺ → ㄱ (탈락), ㄴ 첨가, ㄱ → ㅇ (교체)</td><td>음운 그대로</td></tr>
+    </tbody>
+  </table></div>
+  <p class="src">기출: 2018학년도 6월 모평 13번, 2018학년도 수능 14번</p>
+  </div>
+</section>
+
+<!-- HOME (게임) -->
+<section class="screen" id="home" hidden>
+  <h1>게임</h1>
+  <div class="panel" id="who"><div class="whoRow"><span id="whoName"></span><button class="gbtn" id="switchBtn">학생 바꾸기</button></div></div>
+  <div class="fbstat" id="fbStat2">🔌 기록 서버 연결 확인 중…</div>
+  <div class="row" id="teacherEntry"><button class="btn ghost" id="teacherBtn">👩‍🏫 교사용 관리 🔒</button></div>
+  <div class="stats" id="stats"></div>
+  <div class="modes">
+    <button class="mode main" data-mode="quick"><span class="ic">🎮</span><div><b>게임 시작하기</b><span>15문제 (음운론 4문제 포함) · 20초 제한 · 순위표 기록</span></div></button>
+    <button class="mode" data-mode="review"><span class="ic">🎯</span><div><b>약점 복습</b><span>틀린 문제와 약한 개념만 다시 · 시간 제한 없음</span></div></button>
+    <button class="mode" data-mode="exam"><span class="ic">📅</span><div><b>시험 전날 총정리</b><span>모든 영역 20문제 (플러스 학습 포함) · 표준 발음법·한글 맞춤법·중세까지</span></div></button>
+  </div>
+
+  <div class="panel" id="pickPanel">
+    <b>🧩 개념 골라 5문제</b>
+    <p class="small muted">연습하고 싶은 변동을 고르세요. 시간 제한 없음 · ❗는 지금 약한 개념</p>
+    <div class="filters" id="pickTypes"></div>
+  </div>
+
+  <h2>내 개념 마스터 현황</h2>
+  <p class="muted small">맞힐수록 칸이 채워져요. 빨간 칸은 약점! 이 기기에 기록돼요.</p>
+  <div class="mgrid" id="mgrid"></div>
+
+  <div class="panel" id="boardPanel">
+    <h3>우리 반 순위</h3>
+    <p class="hint" id="boardNote">순위표를 불러오는 중…</p>
+    <ol class="board" id="board"></ol>
+    <div class="row" id="ownerTools" hidden><button class="btn ghost" id="resetBtn">순위표 비우기</button></div>
+  </div>
+</section>
+
+<!-- TEACHER -->
+<section class="screen" id="teacher" hidden>
+  <div class="tmode"><span>👩‍🏫 교사용 관리 <span id="tWho" class="small"></span></span><span><button class="gbtn" id="tLogout" hidden>로그아웃</button> <button class="gbtn" data-go="learn">🎓 학생 모드로 돌아가기</button></span></div>
+  <h1>교사용 관리</h1>
+  <p class="lead">학생별 누적 학습 시간·포인트·약점을 한눈에 봐요.</p>
+  <div class="panel" id="tLogin">
+    <b>선생님 로그인</b>
+    <p class="small muted">Firebase Authentication에 등록한 선생님 이메일로 로그인하세요. 학생 기록은 선생님 계정만 볼 수 있어요.</p>
+    <label for="tEmail">이메일</label><input type="email" id="tEmail" autocomplete="username">
+    <label for="tPw" style="margin-top:10px">비밀번호</label><input type="password" id="tPw" autocomplete="current-password">
+    <p class="hint" id="tLoginMsg"></p>
+    <div class="row"><button class="btn" id="tLoginBtn">로그인</button></div>
+  </div>
+  <div id="tData" hidden>
+  <div class="stats" id="tStats"></div>
+  <div class="row"><button class="btn ghost" id="tReload">↻ 새로고침</button><input type="text" id="tFilter" placeholder="학번 앞자리로 찾기 (예: 103)" style="flex:1;min-width:180px"><button class="btn ghost" id="csvBtn">CSV 내려받기</button></div>
+  <h2>우리 반 약점 개념</h2>
+  <p class="muted small">지금 약점(최근에 틀림)으로 표시된 학생 수예요. 수업 시작 전에 이 개념부터 짚어 주세요.</p>
+  <div id="tWeak"></div>
+  <h2>학생별 기록</h2>
+  <p class="muted small">제목을 누르면 정렬돼요. 학습 시간은 화면을 실제로 조작한 시간만 쌓여요.</p>
+  <div class="tablewrap"><table id="tTable"></table></div>
+  </div>
+  <p class="hint" id="tNote"></p>
+  <div class="row"><button class="btn" data-go="learn">🎓 학생 모드로 돌아가기</button><button class="btn ghost" data-go="home">🎮 게임 메뉴</button></div>
+</section>
+
+<!-- PLAY -->
+<section class="screen" id="play" hidden>
+  <div class="gbar"><button class="gbtn" id="homeBtn">🏠 홈</button><button class="gbtn" id="prevBtn">◀ 이전 문제</button><button class="gbtn" id="soundBtn" aria-label="소리 켜고 끄기" style="margin-left:auto">🔊</button></div>
+  <div class="hud"><span id="qnum">1 / 12</span><span class="combo" id="combo"></span><span class="score" id="score">0</span></div>
+  <div class="timer" id="timer"><i id="timerBar"></i></div>
+  <div class="qtag" id="qtag"></div>
+  <p class="qtext" id="qtext"></p>
+  <div class="qstage" id="qstage"></div>
+  <div class="options" id="options" role="group" aria-label="보기"></div>
+  <div id="feedbackWrap" aria-live="polite"></div>
+  <div class="row"><button class="btn ghost" id="quitBtn">그만하고 결과 보기</button><button class="btn ghost" id="homeBtn2">🏠 처음 화면</button></div>
+</section>
+
+<!-- RESULT -->
+<section class="screen" id="result" hidden>
+  <h2 id="resTitle" style="margin-top:14px">결과</h2>
+  <div class="bigscore" id="finalScore">0</div>
+  <p id="finalDetail" class="muted"></p>
+  <p id="saveNote" class="hint"></p>
+  <div id="growth"></div>
+  <div class="row">
+    <button class="btn" id="againBtn">한 판 더</button>
+    <button class="btn ghost" data-mode="review">약점 복습</button>
+    <button class="btn ghost" data-go="home">게임 메뉴</button>
+    <button class="btn ghost" data-go="learn">🏠 처음 화면</button>
+  </div>
+  <div class="panel" id="reviewPanel">
+    <h3>다시 볼 문제</h3>
+    <ul class="review" id="review"></ul>
+  </div>
+</section>
+  <footer class="credit" id="credit">제작 JJI · 2026.10.08. 시험기간</footer>
+</main>
+<button class="fab" id="printFab" aria-label="인쇄하기">🖨 인쇄</button>
+<div class="modal" id="printMenu" hidden role="dialog" aria-modal="true" aria-label="인쇄 고르기">
+  <div class="mbox">
+    <p>🖨 무엇을 인쇄할까요?</p>
+    <div class="pgrid">
+      <button class="btn" data-print="p:screen">지금 보는 화면</button>
+      <button class="btn" data-print="p:all">전체 학습 자료<br><span class="small" style="font-weight:500">마인드맵·정리표·표준 발음법·한글 맞춤법·중세·예시 모음</span></button>
+      <button class="btn ghost" data-print="p:mindmap">마인드맵 한 장 (가로)</button>
+      <button class="btn ghost" data-print="dl:all">전체 자료 인쇄용 파일 내려받기</button>
+    </div>
+    <p class="hint">인쇄 창이 뜨지 않으면 '인쇄용 파일 내려받기'로 저장한 뒤, 파일을 열면 인쇄 창이 떠요.</p>
+    <div class="row"><button class="btn ghost" id="pmClose">닫기</button></div>
+  </div>
+</div>
+<div id="printArea"></div>
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mText">
+  <div class="mbox">
+    <p id="mText"></p>
+    <input type="password" id="mInput" inputmode="numeric" maxlength="12" autocomplete="off" hidden>
+    <p class="hint" id="mErr"></p>
+    <div class="row"><button class="btn" id="mOk">확인</button><button class="btn ghost" id="mCancel">취소</button></div>
+  </div>
+</div>
+
+<script>
+/* ===== 개념 ===== */
+const CATS = {
+  "교체":{k:1,f:"A → B",n:"음운 수 그대로",d:"다른 소리로 바뀜"},
+  "탈락":{k:2,f:"A → ∅",n:"음운 −1",d:"소리가 사라짐"},
+  "첨가":{k:3,f:"∅ → A",n:"음운 +1",d:"없던 소리가 생김"},
+  "축약":{k:4,f:"A+B → C",n:"음운 −1",d:"둘이 하나로 합쳐짐"}
+};
+const TYPES = {
+  "음절의 끝소리 규칙":{cat:"교체",snd:"자음",f:"받침 → ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅇ 중 하나",def:"받침은 7개 소리로만 발음해요.",ex:"옷[옫] · 있다[읻따] · 앞발[압빨]"},
+  "비음화":{cat:"교체",snd:"자음",as:1,f:"ㄱ·ㄷ·ㅂ + ㄴ·ㅁ → ㅇ·ㄴ·ㅁ",def:"비음 앞에서 비음이 돼요. ㄹ도 ㄴ이 돼요(ㄹ의 비음화).",ex:"국물[궁물] · 받는[반는] · 생략[생냑]"},
+  "유음화":{cat:"교체",snd:"자음",as:1,f:"ㄴ+ㄹ, ㄹ+ㄴ → ㄹ+ㄹ",def:"ㄴ이 ㄹ 앞뒤에서 ㄹ이 돼요.",ex:"분류[불류] · 대관령[대괄령] · 짧네[짤레]"},
+  "구개음화":{cat:"교체",snd:"자음",as:1,f:"ㄷ·ㅌ + ㅣ(조사·접사) → ㅈ·ㅊ",def:"ㄷ, ㅌ이 형식 형태소의 ㅣ를 만나 ㅈ, ㅊ이 돼요.",ex:"같이[가치] · 땀받이[땀바지] · 닫힌[다친]"},
+  "된소리되기":{cat:"교체",snd:"자음",f:"ㄱ ㄷ ㅂ ㅅ ㅈ → ㄲ ㄸ ㅃ ㅆ ㅉ",def:"받침 ㄱ·ㄷ·ㅂ 뒤, 어간 ㄴ·ㅁ 뒤, -(으)ㄹ 뒤 등에서 된소리가 돼요.",ex:"국밥[국빱] · 신고[신꼬] · 쓰일 수[쓰일 쑤]"},
+  "반모음화":{cat:"교체",snd:"모음",sp:1,note:"보이어→보여를 축약으로 보는 견해도 있어요. 하지만 수능(평가원) 기준은 '단모음 ㅣ가 반모음 [j]로 교체'예요. 음운 수: ㅣ ㅓ(2개) → j ㅓ(2개), 그대로!",f:"ㅣ·ㅗ·ㅜ + 모음 → [j]·[w] + 모음",def:"ㅣ, ㅗ, ㅜ가 반모음으로 바뀌어요. 음운 수는 그대로예요.",ex:"그리+었다→그렸다 · 보이+어야→보여야"},
+  "자음군 단순화":{cat:"탈락",snd:"자음",f:"겹받침 → 하나만 발음",def:"음절 끝 겹받침 중 하나가 사라져요.",ex:"닭만[당만] · 값도[갑또] · 짧다[짤따]"},
+  "ㅎ 탈락":{cat:"탈락",snd:"자음",f:"ㅎ + 모음 → ㅎ 사라짐",def:"ㅎ이 모음 앞(또는 ㄶ·ㅀ+ㄴ)에서 사라져요.",ex:"좋은[조은] · 낳은[나은] · 않는다[안는다]"},
+  "ㄹ 탈락":{cat:"탈락",snd:"자음",sp:1,f:"ㄹ + ㄴ·ㅂ·ㅅ·-오 → ㄹ 사라짐",def:"ㄹ이 ㄴ, ㅂ, ㅅ, -오 앞에서 사라져요. 유음 탈락이라고도 해요.",ex:"살+ㅂ니다→삽니다 · 활+살→화살"},
+  "ㅡ 탈락":{cat:"탈락",snd:"모음",sp:1,f:"ㅡ + -아/-어 → ㅡ 사라짐",def:"어간의 ㅡ가 모음 어미 앞에서 사라져요.",ex:"따르+아→따라 · 쓰+어→써"},
+  "동음 탈락":{cat:"탈락",snd:"모음",sp:1,f:"ㅏ+ㅏ, ㅓ+ㅓ → 하나만",def:"같은 모음이 겹치면 하나가 사라져요.",ex:"가+아서→가서 · 달려가+았다→달려갔다"},
+  "ㄴ 첨가":{cat:"첨가",snd:"자음",f:"자음 + 이·야·여·요·유 → ㄴ 덧남",def:"합성어·파생어에서 뒷말 '이, 야, 여, 요, 유' 앞에 ㄴ이 생겨요.",ex:"색연필[생년필] · 맨입[맨닙] · 집일[짐닐]"},
+  "반모음 첨가":{cat:"첨가",snd:"모음",f:"ㅣ + ㅓ → ㅣ + [j]ㅓ",def:"모음 사이에 반모음 [j]가 생겨요. 허용 발음이에요.",ex:"피어[피어/피여] · 피었다[피엳따]"},
+  "거센소리되기":{cat:"축약",snd:"자음",f:"ㅎ + ㄱ·ㄷ·ㅂ·ㅈ → ㅋ·ㅌ·ㅍ·ㅊ",def:"ㅎ과 예사소리가 합쳐져 거센소리 하나가 돼요.",ex:"놓고[노코] · 국화[구콰] · 입학식[이팍씩]"},
+  "모음 축약":{cat:"축약",snd:"모음",sp:1,f:"ㅏ+ㅣ → ㅐ",def:"두 모음이 하나로 줄어요.",ex:"사이→새 · 아이→애 (교과서 예)"}
+};
+const typeNames = Object.keys(TYPES);
+const kOf = t => CATS[TYPES[t].cat].k;
+const SKILLS = ["음운론 기초","플러스 학습","동화 방향·정도","유형 조합","음운 개수","표기 반영","영역 연결"];
+const ASSIM_EX = {"비음화":"역행: 국물[궁물] · 순행: 종로[종노] · 상호: 생략[생냑]","유음화":"역행: 분류[불류] · 순행: 짧네[짤레] (모두 완전)","구개음화":"역행·불완전: 같이[가치]"};
+
+/* ===== 예시 자료 (2025 고1 모의고사 3·6·9·10월 + 2016~2018 시행 고3 학평·모평·수능 기출) ===== */
+const ITEMS = [
+ {w:"사이시옷",p:"사이시옫",t:["음절의 끝소리 규칙"],src:"3월 15번 <보기> '사이시옷을 표기하는 경우'",x:"받침 ㅅ은 음절 끝에서 ㄷ으로 발음돼요.",n:["사이시옷","사이시오"]},
+ {w:"있다",p:"읻따",t:["음절의 끝소리 규칙","된소리되기"],src:"3월 11~12번 지문 '구별할 수 있다'",x:"받침 ㅆ이 음절 끝에서 ㄷ이 되고(끝소리 규칙), 그 ㄷ 뒤의 ㄷ이 ㄸ이 돼요(된소리되기).",n:["있다","읻다"]},
+ {w:"갖고",p:"갇꼬",t:["음절의 끝소리 규칙","된소리되기"],src:"3월 13번 ② '[+여성]을 더 갖고 있으므로'",x:"받침 ㅈ이 ㄷ이 되고(끝소리 규칙), 그 뒤의 ㄱ이 ㄲ이 돼요(된소리되기).",n:["갖고","가꼬"]},
+ {w:"싶다",p:"십따",t:["음절의 끝소리 규칙","된소리되기"],src:"3월 11~12번 지문 '그림을 보고 싶다'",x:"받침 ㅍ이 ㅂ이 되고(끝소리 규칙), 그 뒤의 ㄷ이 ㄸ이 돼요(된소리되기).",n:["십다","시프다"]},
+ {w:"속삭였다",p:"속싸겯따",t:["된소리되기","음절의 끝소리 규칙"],src:"3월 14번 <보기> ㄷ '저희끼리 속삭였다'",x:"ㄱ 뒤의 ㅅ이 ㅆ이 되고(된소리되기), 받침 ㅆ이 ㄷ이 된 뒤(끝소리 규칙) 그 뒤의 ㄷ이 ㄸ이 돼요.",n:["속사겯따","속싸겼다"]},
+ {w:"받고",p:"받꼬",t:["된소리되기"],src:"3월 12번 ㉡ '선물을 받고 싶다'",x:"받침 ㄷ 뒤의 ㄱ이 ㄲ으로 바뀌어요.",n:["받고","바꼬"]},
+ {w:"먹고서",p:"먹꼬서",t:["된소리되기"],src:"3월 11~12번 지문 '먹고서 보다'",x:"받침 ㄱ 뒤의 ㄱ이 ㄲ으로 바뀌어요.",n:["먹고서","머꼬서"]},
+ {w:"직접",p:"직쩝",t:["된소리되기"],src:"3월 14번 <보기> ㄹ '당신께서 직접 맞이하셨다'",x:"받침 ㄱ 뒤의 ㅈ이 ㅉ으로 바뀌어요.",n:["직접","지접"]},
+ {w:"신입생",p:"시닙쌩",t:["된소리되기"],src:"3월 14번 <보기> ㅁ '신입생에게'",x:"받침 ㅂ 뒤의 ㅅ이 ㅆ으로 바뀌어요. 받침 ㄴ은 뒤 음절로 넘어가 발음될 뿐 바뀌지 않아요.",n:["시닙생","신입생"]},
+ {w:"학습",p:"학씁",t:["된소리되기"],src:"3월 15번 <보기> '학습 과제'",x:"받침 ㄱ 뒤의 ㅅ이 ㅆ으로 바뀌어요.",n:["학습","하습"]},
+ {w:"각각",p:"각깍",t:["된소리되기"],src:"3월 15번 <보기> ㄷ '각각 ㄴ 소리가 생기는 경우'",x:"받침 ㄱ 뒤의 ㄱ이 ㄲ으로 바뀌어요.",n:["각각","가깍"]},
+ {w:"적절하지",p:"적쩔하지",t:["된소리되기"],src:"3월 13~15번 발문 '적절하지 않은 것은?'",x:"받침 ㄱ 뒤의 ㅈ이 ㅉ으로 바뀌어요.",n:["적절하지","저절하지"]},
+ {w:"자연스럽지",p:"자연스럽찌",t:["된소리되기"],src:"3월 11~12번 지문 '자연스럽지 않다'",x:"받침 ㅂ 뒤의 ㅈ이 ㅉ으로 바뀌어요.",n:["자연스럽지","자연스러지"]},
+ {w:"봅시다",p:"봅씨다",t:["된소리되기"],src:"3월 15번 <보기> '탐구해 봅시다'",x:"받침 ㅂ 뒤의 ㅅ이 ㅆ으로 바뀌어요.",n:["봅시다","보시다"]},
+ {w:"쓰일 수",p:"쓰일 쑤",t:["된소리되기"],src:"3월 11~12번 지문 '홀로 서술어로 쓰일 수 없으며'",x:"관형사형 어미 '-ㄹ' 뒤에 오는 ㅅ이 ㅆ으로 바뀌어요.",n:["쓰일 수","쓰이 쑤"]},
+ {w:"빗길",p:"비낄",t:["된소리되기"],src:"3월 15번 a '비 + 길 → 빗길'",x:"원칙 [비낄]: 사이시옷은 '뒷말이 된소리'라는 표시라서 ㄱ→ㄲ만 발음해요(된소리되기). 사이시옷을 [ㄷ]으로 낸 [빋낄]도 허용(표준 발음법 제30항 1). 둘 다 표준 발음이에요.",n:["빗길","비길"]},
+ {w:"콧날",p:"콘날",t:["음절의 끝소리 규칙","비음화"],a:["역행","완전"],src:"3월 15번 c '코 + 날 → 콧날'",x:"사이시옷 ㅅ이 ㄷ이 되고(끝소리 규칙), 뒤의 ㄴ 때문에 ㄷ이 ㄴ으로 똑같이 바뀌어요(비음화).",n:["코날","콛날"]},
+ {w:"잇몸",p:"인몸",t:["음절의 끝소리 규칙","비음화"],a:["역행","불완전"],src:"3월 15번 d '이 + 몸 → 잇몸'",x:"사이시옷 ㅅ이 ㄷ이 되고(끝소리 규칙), 뒤의 ㅁ 때문에 ㄷ이 비음 ㄴ으로 바뀌어요(비음화). ㅁ과 똑같아지지는 않아요.",n:["임몸","이몸"]},
+ {w:"뱃일",p:"밴닐",t:["음절의 끝소리 규칙","ㄴ 첨가","비음화"],a:["역행","완전"],src:"3월 15번 e '배 + 일 → 뱃일'",x:"사이시옷 ㅅ이 ㄷ이 되고(끝소리 규칙), 뒷말 '일' 앞에 ㄴ이 덧붙고(ㄴ 첨가), 그 ㄴ 때문에 ㄷ이 ㄴ으로 똑같이 바뀌어요(비음화).",n:["배실","배닐"]},
+ {w:"숙녀",p:"숭녀",t:["비음화"],a:["역행","불완전"],src:"3월 13번 <보기> 표 '숙녀'",x:"뒤의 비음 ㄴ 때문에 ㄱ이 같은 자리의 비음 ㅇ으로 바뀌어요. ㄴ과 똑같아지지는 않아요.",n:["숙녀","수녀"]},
+ {w:"막내",p:"망내",t:["비음화"],a:["역행","불완전"],src:"3월 14번 <보기> ㄴ '막내는 엄마에게'",x:"뒤의 비음 ㄴ 때문에 ㄱ이 비음 ㅇ으로 바뀌어요.",n:["막내","마내"]},
+ {w:"있는",p:"인는",t:["음절의 끝소리 규칙","비음화"],a:["역행","완전"],src:"3월 11~12번 지문 '쓰일 수 있는 용언'",x:"받침 ㅆ이 ㄷ이 되고(끝소리 규칙), 뒤의 ㄴ 때문에 ㄷ이 ㄴ으로 똑같이 바뀌어요(비음화).",n:["읻는","이는"]},
+ {w:"있습니다",p:"읻씀니다",t:["음절의 끝소리 규칙","된소리되기","비음화"],a:["역행","불완전"],src:"3월 15번 <보기> '표기하는 경우가 있습니다'",x:"ㅆ이 ㄷ이 되고(끝소리 규칙), 그 뒤 ㅅ이 ㅆ이 되며(된소리되기), ㅂ이 뒤의 ㄴ 때문에 ㅁ이 돼요(비음화).",n:["이씀니다","읻습니다"]},
+ {w:"붙이면",p:"부치면",t:["구개음화"],a:["역행","불완전"],src:"3월 11~12번 지문 '연결 어미를 붙이면'",x:"뒤의 접사 '-이-'의 ㅣ 때문에 받침 ㅌ이 ㅊ으로 바뀌어요.",n:["부티면","부지면"]},
+ {w:"같이",p:"가치",t:["구개음화"],a:["역행","불완전"],src:"3월 11~12번 지문 '먹어 아주 보다와 같이'",x:"뒤의 접사 '-이'의 ㅣ 때문에 받침 ㅌ이 ㅊ으로 바뀌어요.",n:["가티","가지"]},
+ {w:"덧붙이는",p:"덛뿌치는",t:["음절의 끝소리 규칙","된소리되기","구개음화"],a:["역행","불완전"],src:"3월 11~12번 지문 '희망의 의미를 덧붙이는'",x:"ㅅ이 ㄷ이 되고(끝소리 규칙), 그 뒤 ㅂ이 ㅃ이 되며(된소리되기), ㅌ이 ㅣ 앞에서 ㅊ이 돼요(구개음화).",n:["더부치는","덛뿌티는"]},
+ {w:"많은",p:"마는",t:["ㅎ 탈락"],src:"3월 12번 ㉠ '거리에 많은 사람들이'",x:"ㄶ의 ㅎ이 모음 어미 앞에서 탈락하고, ㄴ이 뒤 음절로 넘어가 발음돼요.",n:["만흔","마흔"]},
+ {w:"넣으면",p:"너으면",t:["ㅎ 탈락"],src:"3월 12번 ⑤ '아주를 넣으면'",x:"받침 ㅎ이 모음 어미 앞에서 탈락해요.",n:["너흐면","너트면"]},
+ {w:"않는다",p:"안는다",t:["ㅎ 탈락"],src:"3월 11~12번 지문 '제대로 파악되지 않는다'",x:"ㄶ 뒤에 ㄴ이 오면 ㅎ을 발음하지 않아요.",n:["안튼다","아는다"]},
+ {w:"달려가+았다",p:"달려갔다",t:["동음 탈락"],src:"3월 14번 <보기> ㄴ '엄마에게 달려갔다'",x:"어간 '가-'의 ㅏ와 어미 '-았-'의 ㅏ가 겹쳐 하나가 탈락해요.",form:1},
+ {w:"놓다",p:"노타",t:["거센소리되기"],src:"3월 12번 ㉤ '창문을 열어 놓다'",x:"ㅎ과 ㄷ이 합쳐져 ㅌ이 돼요.",n:["놓다","노다"]},
+ {w:"많다",p:"만타",t:["거센소리되기"],src:"3월 13번 <보기> '의미 자질이 하나 이상 많다'",x:"ㄶ의 ㅎ과 뒤의 ㄷ이 합쳐져 ㅌ이 돼요.",n:["만다","만따"]},
+ {w:"넣거나",p:"너커나",t:["거센소리되기"],src:"3월 11~12번 지문 '부사어를 넣거나'",x:"ㅎ과 ㄱ이 합쳐져 ㅋ이 돼요.",n:["너거나","넣거나"]},
+ {w:"정확하게",p:"정화카게",t:["거센소리되기"],src:"3월 11~12번 지문 '의미를 정확하게 파악할 수 있다'",x:"ㄱ과 ㅎ이 합쳐져 ㅋ이 돼요.",n:["정화가게","정확하게"]},
+ {w:"분석한",p:"분서칸",t:["거센소리되기"],src:"3월 13번 발문 '의미 자질을 분석한 결과로'",x:"ㄱ과 ㅎ이 합쳐져 ㅋ이 돼요.",n:["분서간","분석한"]},
+ {w:"파악할 수",p:"파아칼 쑤",t:["거센소리되기","된소리되기"],src:"3월 11~12번 지문 '정확하게 파악할 수 있다'",x:"ㄱ과 ㅎ이 합쳐져 ㅋ이 되고(거센소리되기), 관형사형 어미 '-ㄹ' 뒤의 ㅅ이 ㅆ이 돼요(된소리되기).",n:["파아갈 수","파아칼 수"]},
+ {w:"보이+어야",p:"보여야",t:["반모음화"],src:"3월 14번 <보기> ㅁ '모범을 보여야 한다'",x:"ㅣ가 반모음 [j]로 바뀌어요. 음운 개수 그대로라 교체예요. ㅣ가 남는 반모음 첨가와 달리 음절이 하나 줄어요. 축약으로 보는 견해도 있지만 수능 기준은 교체(단모음→반모음)예요.",form:1},
+ {w:"합치+어",p:"합쳐",t:["반모음화"],src:"3월 15번 <보기> 'A, B가 합쳐져'",x:"어간 끝 ㅣ가 뒤의 ㅓ와 만나 반모음 [j]로 바뀌어요(ㅊ ㅣ ㅓ → ㅊ j ㅓ). 음운 개수는 그대로라 교체예요. 축약으로 보는 견해도 있지만 수능 기준은 교체(단모음→반모음)예요.",form:1},
+ {w:"색연필",p:"생년필",t:["ㄴ 첨가","비음화"],a:["역행","불완전"],src:"6월 14번 <보기> '색연필[생년필]은 첨가와 교체'",x:"뒷말 '연' 앞에 ㄴ이 덧붙고(ㄴ 첨가), 그 ㄴ 때문에 ㄱ이 비음 ㅇ으로 바뀌어요(비음화).",n:["새견필","색년필"]},
+ {w:"넓죽하다",p:"넙쭈카다",t:["자음군 단순화","된소리되기","거센소리되기"],src:"6월 14번 <보기> '넓죽하다[넙쭈카다]는 탈락, 교체, 축약'",x:"ㄼ 중 ㄹ이 탈락하고(자음군 단순화), ㅂ 뒤의 ㅈ이 ㅉ이 되며(된소리되기), ㄱ과 ㅎ이 ㅋ으로 합쳐져요(거센소리되기).",n:["널쭈카다","넙죽하다"]},
+ {w:"밥값",p:"밥깝",t:["자음군 단순화","된소리되기"],src:"6월 14번 ① '밥값[밥깝]'",x:"ㅄ 중 ㅅ이 탈락하고(자음군 단순화), 받침 ㅂ 뒤의 ㄱ이 ㄲ이 돼요(된소리되기).",n:["밥갑","바깝"]},
+ {w:"닳고",p:"달코",t:["거센소리되기"],src:"6월 14번 ② '닳고[달코]'",x:"ㅀ의 ㅎ과 뒤의 ㄱ이 합쳐져 ㅋ이 될 뿐, 탈락한 음운은 없어요. 그래서 14번 ② '탈락과 축약이 일어났군'은 적절하지 않아요.",n:["달고","달꼬"]},
+ {w:"물약",p:"물략",t:["ㄴ 첨가","유음화"],a:["순행","완전"],src:"6월 14번 ③ '물약[물략]'",x:"뒷말 '약' 앞에 ㄴ이 덧붙고(ㄴ 첨가), 앞의 ㄹ 때문에 그 ㄴ이 ㄹ로 똑같이 바뀌어요(유음화).",n:["무략","물냑"]},
+ {w:"닫힌",p:"다친",t:["거센소리되기","구개음화"],a:["역행","불완전"],src:"6월 14번 ④ '닫힌[다친]'",x:"ㄷ과 ㅎ이 ㅌ으로 합쳐지고(거센소리되기), 그 ㅌ이 뒤의 ㅣ 때문에 ㅊ이 돼요(구개음화).",n:["다틴","다진"]},
+ {w:"삯일",p:"상닐",t:["자음군 단순화","ㄴ 첨가","비음화"],a:["역행","불완전"],src:"6월 14번 ⑤ '삯일[상닐]'",x:"ㄳ 중 ㅅ이 탈락하고(자음군 단순화), '일' 앞에 ㄴ이 덧붙고(ㄴ 첨가), 그 ㄴ 때문에 ㄱ이 ㅇ이 돼요(비음화).",n:["사길","삭닐"]},
+ {w:"홑문장",p:"혼문장",t:["음절의 끝소리 규칙","비음화"],a:["역행","불완전"],src:"6월 11~12번 지문 '홑문장과 겹문장'",x:"받침 ㅌ이 ㄷ이 되고(끝소리 규칙), 뒤의 ㅁ 때문에 ㄷ이 비음 ㄴ으로 바뀌어요(비음화).",n:["홑문장","혿문장"]},
+ {w:"겹문장",p:"겸문장",t:["비음화"],a:["역행","완전"],src:"6월 11~12번 지문 '홑문장과 겹문장'",x:"뒤의 ㅁ 때문에 ㅂ이 ㅁ으로 똑같이 바뀌어요.",n:["겹문장","겨문장"]},
+ {w:"받는",p:"반는",t:["비음화"],a:["역행","완전"],src:"6월 11~12번 지문 '꾸밈을 받는 대상'",x:"뒤의 ㄴ 때문에 ㄷ이 ㄴ으로 똑같이 바뀌어요.",n:["받는","바는"]},
+ {w:"함박눈",p:"함방눈",t:["비음화"],a:["역행","불완전"],src:"6월 12번 ① '함박눈이 펑펑 내렸다'",x:"뒤의 ㄴ 때문에 ㄱ이 비음 ㅇ으로 바뀌어요.",n:["함박눈","함바눈"]},
+ {w:"생략",p:"생냑",t:["비음화"],a:["상호","불완전"],src:"6월 11~12번 지문 '주어가 생략된 문장'",x:"ㄱ 뒤의 ㄹ이 ㄴ으로 바뀌고(ㄹ의 비음화), 그 ㄴ 때문에 ㄱ이 ㅇ으로 바뀌어요. 두 소리가 서로 영향을 주고받아요.",n:["생략","샐략"]},
+ {w:"분류",p:"불류",t:["유음화"],a:["역행","완전"],src:"6월 14번 <보기> '축약으로 분류할 수 있다'",x:"뒤의 ㄹ 때문에 ㄴ이 ㄹ로 똑같이 바뀌어요.",n:["분뉴","분류"]},
+ {w:"짧다",p:"짤따",t:["자음군 단순화","된소리되기"],src:"6월 11~12번 지문 '토끼는 앞발이 짧다'",x:"ㄼ 중 ㅂ이 탈락하고(자음군 단순화), 용언 어간의 겹받침 뒤 ㄷ이 ㄸ이 돼요(된소리되기).",n:["짭따","짤다"]},
+ {w:"앞발",p:"압빨",t:["음절의 끝소리 규칙","된소리되기"],src:"6월 11~12번 지문 '토끼는 앞발이 짧다'",x:"받침 ㅍ이 ㅂ이 되고(끝소리 규칙), 그 뒤의 ㅂ이 ㅃ이 돼요(된소리되기).",n:["압발","아빨"]},
+ {w:"식당",p:"식땅",t:["된소리되기"],src:"6월 11번 ㉣ '좋아하는 식당은'",x:"받침 ㄱ 뒤의 ㄷ이 ㄸ으로 바뀌어요.",n:["식당","시당"]},
+ {w:"목적어",p:"목쩌거",t:["된소리되기"],src:"6월 11~12번 지문 '주어, 목적어, 부사어'",x:"받침 ㄱ 뒤의 ㅈ이 ㅉ으로 바뀌어요.",n:["목저거","목적어"]},
+ {w:"옷걸이",p:"옫꺼리",t:["음절의 끝소리 규칙","된소리되기"],src:"6월 13번 ③ '옷걸이'",x:"받침 ㅅ이 ㄷ이 되고(끝소리 규칙), 그 뒤의 ㄱ이 ㄲ이 돼요(된소리되기).",n:["옫거리","오꺼리"]},
+ {w:"눈물샘",p:"눈물쌤",t:["된소리되기"],src:"6월 13번 ② '눈물샘'",x:"'눈물'과 '샘'이 합쳐지며 뒷말의 ㅅ이 ㅆ으로 바뀌어요(사잇소리 현상). 앞말이 ㄹ로 끝나 사이시옷은 적지 않아요.",n:["눈물샘","눔물샘"]},
+ {w:"바닷가",p:"바닫까",t:["음절의 끝소리 규칙","된소리되기"],src:"6월 11번 ㉤ '바닷가에 놀러 가자고'",x:"[바닫까](허용): 사이시옷 ㅅ이 [ㄷ]으로 바뀌고(음절의 끝소리 규칙), 그 뒤 ㄱ이 ㄲ이 돼요(된소리되기). 원칙은 [바다까]: 사이시옷은 된소리 표시라 [ㄷ] 없이 발음해요. 둘 다 표준 발음이에요(표준 발음법 제30항 1).",n:["바닷가","바다가"]},
+ {w:"좋아하는",p:"조아하는",t:["ㅎ 탈락"],src:"6월 11번 ㉣ '그녀가 좋아하는 식당'",x:"받침 ㅎ이 모음 어미 앞에서 탈락해요.",n:["조하하는","조타하는"]},
+ {w:"빨갛다",p:"빨가타",t:["거센소리되기"],src:"6월 11~12번 지문 '사과가 빨갛다'",x:"ㅎ과 ㄷ이 합쳐져 ㅌ이 돼요.",n:["빨갇다","빨가다"]},
+ {w:"산책하러",p:"산채카러",t:["거센소리되기"],src:"6월 12번 ③ '공원에 산책하러 가자'",x:"ㄱ과 ㅎ이 합쳐져 ㅋ이 돼요.",n:["산채가러","산책하러"]},
+ {w:"복합어",p:"보카버",t:["거센소리되기"],src:"6월 13번 <보기> '복합어 중에는'",x:"ㄱ과 ㅎ이 합쳐져 ㅋ이 되고, 받침 ㅂ은 뒤 음절로 넘어가 발음돼요.",n:["보가버","복하버"]},
+ {w:"바람직한",p:"바람지칸",t:["거센소리되기"],src:"6월 15번 <보기> '바람직한 표현이 아니므로'",x:"ㄱ과 ㅎ이 합쳐져 ㅋ이 돼요.",n:["바람지간","바람직한"]},
+ {w:"잡혔다",p:"자펻따",t:["거센소리되기","음절의 끝소리 규칙","된소리되기"],src:"6월 15번 ㉣ '토끼가 사냥꾼에게 잡혔다'",x:"ㅂ과 ㅎ이 ㅍ으로 합쳐지고(거센소리되기), 받침 ㅆ이 ㄷ이 된 뒤(끝소리 규칙) 그 뒤의 ㄷ이 ㄸ이 돼요(된소리되기).",n:["자벋따","잡혇따"]},
+ {w:"피었다",p:"피엳따",t:["반모음 첨가","음절의 끝소리 규칙","된소리되기"],noPron:1,src:"6월 11번 ㉡ '라일락이 피었다'",x:"[피얻따]가 원칙, [피엳따]도 허용돼요. ㅣ는 남고 [j]가 새로 생겨 음운 +1이라 첨가예요. 받침 ㅆ→ㄷ, 그 뒤 ㄷ→ㄸ도 일어나요."},
+ {w:"따르+아",p:"따라",t:["ㅡ 탈락"],src:"6월 14번 <보기> '음운 환경에 따라'",x:"어간 '따르-'의 ㅡ가 모음 어미 '-아' 앞에서 탈락해요.",form:1},
+ {w:"그리+었다",p:"그렸다",t:["반모음화"],src:"6월 15번 ㉠ '그림을 그렸다'",x:"어간 끝 ㅣ가 뒤의 ㅓ와 만나 반모음 [j]로 바뀌어요(ㄹ ㅣ ㅓ → ㄹ j ㅓ). 음운 개수는 그대로라 교체예요. 축약으로 보는 견해도 있지만 수능 기준은 교체(단모음→반모음)예요.",form:1},
+ {w:"살+ㅂ니다",p:"삽니다",t:["ㄹ 탈락"],src:"9월 12번 ⓐ '저는 이 집에 삽니다'",x:"어간 '살-'의 ㄹ이 'ㅂ' 앞에서 탈락해요('ㄴ' 앞이 아니에요). 발음은 비음화까지 일어나 [삼니다]예요.",form:1},
+ {w:"말+오",p:"마오",t:["ㄹ 탈락"],src:"9월 12번 ⓑ '잊지 마오'",x:"어간 '말-'의 ㄹ이 어미 '-오' 앞에서 탈락해요.",form:1},
+ {w:"활+살",p:"화살",t:["ㄹ 탈락"],src:"9월 12번 ⓒ '과녁에 화살을 쏘았다'",x:"두 어근 '활'과 '살'이 합쳐질 때 ㅅ 앞에서 ㄹ이 탈락해요. 단어가 만들어지는 과정의 ㄹ 탈락이라 표기에도 반영돼요.",form:1},
+ {w:"좋은",p:"조은",t:["ㅎ 탈락"],src:"9월 12번 ⓓ '좋은[조은] 물건'",x:"ㅎ으로 끝나는 어간 뒤에 모음으로 시작하는 어미가 와서 ㅎ이 탈락해요. 표기에는 반영되지 않아요.",n:["조흔","조튼"]},
+ {w:"국화",p:"구콰",t:["거센소리되기"],src:"9월 12번 ⓔ '국화[구콰]가 많이 피었다'",x:"예사소리 ㄱ과 ㅎ이 합쳐져 ㅋ이 돼요. 표기에는 반영되지 않아요.",n:["구과","국화"]},
+ {w:"묻히다",p:"무치다",t:["거센소리되기","구개음화"],a:["역행","불완전"],src:"10월 7번 ㉠ '묻히다[무치다]'",x:"ㄷ과 ㅎ이 ㅌ으로 합쳐지고(축약), 그 ㅌ이 뒤의 ㅣ 때문에 ㅊ이 돼요(교체). 탈락은 일어나지 않아요.",n:["무티다","무디다"]},
+ {w:"털양말",p:"털량말",t:["ㄴ 첨가","유음화"],a:["순행","완전"],src:"10월 7번 ㉡ '털양말[털량말]'",x:"뒷말 '양' 앞에 ㄴ이 덧붙고(첨가), 앞의 ㄹ 때문에 그 ㄴ이 ㄹ로 똑같이 바뀌어요(교체).",n:["터량말","털냥말"]},
+ {w:"긁적긁적",p:"극쩍끅쩍",t:["자음군 단순화","된소리되기"],src:"10월 7번 ㉢ '긁적긁적[극쩍끅쩍]'",x:"두 번의 ㄺ에서 모두 ㄹ이 탈락하고(탈락), 받침 ㄱ 뒤의 ㅈ, ㄱ이 ㅉ, ㄲ으로 바뀌어요(교체). 첨가는 일어나지 않아요.",n:["글쩍글쩍","극적극적"]},
+ {w:"척박하다",p:"척빠카다",t:["된소리되기","거센소리되기"],src:"10월 7번 ㉣ '척박하다[척빠카다]'",x:"받침 ㄱ 뒤의 ㅂ이 ㅃ이 되고(교체), ㄱ과 ㅎ이 ㅋ으로 합쳐져요(축약). 탈락은 일어나지 않아요.",n:["척박하다","척빠가다"]},
+ {w:"굵다랗다",p:"국따라타",t:["자음군 단순화","된소리되기","거센소리되기"],src:"10월 7번 ㉤ '굵다랗다[국ː따라타]'",x:"ㄺ 중 ㄹ이 탈락하고(탈락), ㄱ 뒤의 ㄷ이 ㄸ이 되며(교체), ㅎ과 ㄷ이 ㅌ으로 합쳐져요(축약). 첨가는 일어나지 않아요. 표준 발음은 장음을 표시해 [국ː따라타]예요.",n:["굴따라타","국다라타"]},
+ {w:"집념",p:"짐념",t:["비음화"],a:["역행","불완전"],src:"기출 2018년 3월 고3 학평 11번 ⓐ '집념[짐념]도 강하다'",x:"뒤의 비음 ㄴ 때문에 ㅂ이 같은 자리의 비음 ㅁ으로 바뀌어요. 장애음과 비음을 연달아 발음하기 어려워 예외 없이 일어나요.",n:["집념","지념"]},
+ {w:"곧잘",p:"곧짤",t:["된소리되기"],src:"기출 2018년 3월 고3 학평 11번 ⓑ '춤을 곧잘[곧짤] 춘다'",x:"파열음 ㄷ 뒤의 ㅈ이 ㅉ으로 바뀌어요. 음운 조건만으로 반드시 일어나는 된소리되기예요.",n:["곧잘","고짤"]},
+ {w:"놓고",p:"노코",t:["거센소리되기"],src:"기출 2018년 3월 고3 학평 11번 ⓒ, 2018년 10월 고3 학평 11번 ⓐ",x:"ㅎ과 ㄱ이 합쳐져 ㅋ이 돼요. 음운 조건만으로 규칙성을 알 수 있는 변동이에요.",n:["노고","놓고"]},
+ {w:"담기",p:"담끼",t:["된소리되기"],src:"기출 2018년 3월 고3 학평 11번 ⓓ '음식을 담기[담ː끼]가'",x:"용언 어간 끝 ㅁ 뒤의 어미 ㄱ이 ㄲ이 돼요. 어간과 어미가 결합한다는 형태소 조건이 있어야 일어나요.",n:["담기","답끼"]},
+ {w:"뜯긴",p:"뜯낀",t:["된소리되기"],src:"기출 2018년 3월 고3 학평 11번 ⓔ '모기한테 뜯긴[뜯낀]'",x:"파열음 ㄷ 뒤의 ㄱ이 ㄲ으로 바뀌어요.",n:["뜯긴","뜨낀"]},
+ {w:"갑자기",p:"갑짜기",t:["된소리되기"],src:"기출 2018년 3월 고3 학평 11~12번 지문",x:"파열음 ㅂ 뒤의 ㅈ은 반드시 ㅉ으로 발음돼요. 그래서 표기는 '갑자기'로 해도 발음은 예외 없이 [갑짜기]예요.",n:["갑자기","가짜기"]},
+ {w:"국수",p:"국쑤",t:["된소리되기"],src:"기출 2018년 3월 고3 학평 12번 <보기> '국수, 몹시'",x:"ㄱ 받침 뒤의 ㅅ이 ㅆ으로 바뀌어요. 반드시 일어나는 변동이라 표기에 된소리를 밝혀 적지 않아요.",n:["국수","구쑤"]},
+ {w:"몹시",p:"몹씨",t:["된소리되기"],src:"기출 2018년 3월 고3 학평 12번 <보기> '국수, 몹시'",x:"ㅂ 받침 뒤의 ㅅ이 ㅆ으로 바뀌어요. 표기에는 된소리를 적지 않아요.",n:["몹시","모씨"]},
+ {w:"신고",p:"신꼬",t:["된소리되기"],src:"기출 2018년 3월 고3 학평 11~12번 지문 '(신을) 신고'",x:"(신을) 신고: 용언 어간 끝 ㄴ 뒤의 어미 ㄱ이 ㄲ이 돼요. 명사 '신고(申告)'는 [신고]로 발음하므로, 어간과 어미라는 형태소 조건이 필요한 된소리되기예요.",n:["신고","시꼬"]},
+ {w:"국물",p:"궁물",t:["비음화"],a:["역행","불완전"],src:"기출 2018년 3월 고3 학평 11~12번 지문",x:"뒤의 비음 ㅁ 때문에 ㄱ이 비음 ㅇ으로 바뀌어요. 예외 없이 일어나요.",n:["국물","구물"]},
+ {w:"좋다",p:"조타",t:["거센소리되기"],src:"기출 2018년 3월 고3 학평 11~12번 지문",x:"ㅎ과 ㄷ이 합쳐져 ㅌ이 돼요.",n:["조다","졷다"]},
+ {w:"국밥",p:"국빱",t:["된소리되기"],src:"기출 2018년 3월 고3 학평 11~12번 지문",x:"파열음 ㄱ 뒤의 ㅂ은 반드시 ㅃ으로 바뀌어요.",n:["국밥","굽밥"]},
+ {w:"낱낱이",p:"난나치",t:["음절의 끝소리 규칙","비음화","구개음화"],src:"기출 2018년 4월 고3 학평 11번 ㉠, 2017년 4월 고3 학평 11번 ㉡",x:"첫 받침 ㅌ이 ㄷ이 되고(끝소리 규칙) 뒤의 ㄴ 때문에 ㄴ이 돼요(비음화). 둘째 받침 ㅌ은 접사 '-이' 앞에서 ㅊ이 돼요(구개음화). 교체만 세 번 일어나요.",n:["낟나치","난나티"]},
+ {w:"넋두리",p:"넉뚜리",t:["자음군 단순화","된소리되기"],src:"기출 2018년 4월 고3 학평 11번 ㉡",x:"ㄳ 중 ㅅ이 탈락하고(탈락), ㄱ 뒤의 ㄷ이 ㄸ이 돼요(교체).",n:["넉두리","널뚜리"]},
+ {w:"입학식",p:"이팍씩",t:["거센소리되기","된소리되기"],src:"기출 2018년 4월 고3 학평 11번 ㉢",x:"ㅂ과 ㅎ이 ㅍ으로 합쳐지고(축약), ㄱ 뒤의 ㅅ이 ㅆ이 돼요(교체).",n:["이팍식","입학씩"]},
+ {w:"첫여름",p:"천녀름",t:["음절의 끝소리 규칙","ㄴ 첨가","비음화"],a:["역행","완전"],src:"기출 2018년 4월 고3 학평 11번 ㉣",x:"ㅅ이 ㄷ이 되고(끝소리 규칙), '여름' 앞에 ㄴ이 덧붙고(ㄴ 첨가), 그 ㄴ 때문에 ㄷ이 ㄴ으로 똑같이 바뀌어요(비음화). ㅅ이 ㄴ이 되기까지 교체가 두 번 일어나요.",n:["처녀름","첟녀름"]},
+ {w:"긁는",p:"긍는",t:["자음군 단순화","비음화"],a:["역행","불완전"],src:"기출 2019학년도 6월 모평 14번 ㉠ (비표준 [글른])",x:"ㄺ 중 ㄹ이 탈락하고(자음군 단순화), 남은 ㄱ이 ㄴ 앞에서 ㅇ이 돼요(비음화). ㄱ이 탈락한 뒤 유음화가 일어난 [글른]은 비표준 발음이에요.",n:["글른","극는"]},
+ {w:"짧네",p:"짤레",t:["자음군 단순화","유음화"],a:["순행","완전"],src:"기출 2019학년도 6월 모평 14번 ㉡ (비표준 [짬네])",x:"ㄼ 중 ㅂ이 탈락하고(자음군 단순화), 앞의 ㄹ 때문에 ㄴ이 ㄹ로 바뀌어요(유음화). ㄹ이 탈락한 뒤 비음화가 일어난 [짬네]는 비표준 발음이에요.",n:["짬네","짭네"]},
+ {w:"끊기고",p:"끈키고",t:["거센소리되기"],src:"기출 2019학년도 6월 모평 14번 ㉢ (비표준 [끈기고])",x:"ㄶ의 ㅎ과 뒤의 ㄱ이 합쳐져 ㅋ이 돼요.",n:["끈기고","끈끼고"]},
+ {w:"뚫지",p:"뚤치",t:["거센소리되기"],src:"기출 2019학년도 6월 모평 14번 ㉣ (비표준 [뚤찌])",x:"ㅀ의 ㅎ과 뒤의 ㅈ이 합쳐져 ㅊ이 돼요.",n:["뚤찌","뚤지"]},
+ {w:"꽃다발",p:"꼳따발",t:["음절의 끝소리 규칙","된소리되기"],src:"기출 2018년 7월 고3 학평 13번 ②",x:"받침 ㅊ이 ㄷ이 되고(끝소리 규칙), 그 뒤의 ㄷ이 ㄸ이 돼요(된소리되기).",n:["꼬따발","꼳다발"]},
+ {w:"삶고",p:"삼꼬",t:["자음군 단순화","된소리되기"],src:"기출 2018년 7월 고3 학평 13번 ① '(계란을) 삶고'",x:"ㄻ 중 ㄹ이 탈락하고, 어간 받침 ㄻ 뒤의 어미 ㄱ이 ㄲ이 돼요.",n:["살고","삼고"]},
+ {w:"핥지만",p:"할찌만",t:["자음군 단순화","된소리되기"],src:"기출 2018년 7월 고3 학평 13번 ② '(그릇을) 핥지만'",x:"ㄾ 중 ㅌ이 탈락하고, 어간 받침 ㄾ 뒤의 어미 ㅈ이 ㅉ이 돼요.",n:["할지만","핟찌만"]},
+ {w:"읊조리다",p:"읍쪼리다",t:["자음군 단순화","음절의 끝소리 규칙","된소리되기"],src:"기출 2018년 7월 고3 학평 13번 ③ '(시를) 읊조리다'",x:"ㄿ 중 ㄹ이 탈락하고, 남은 ㅍ이 ㅂ이 되며, 그 뒤의 ㅈ이 ㅉ이 돼요.",n:["을쪼리다","읍조리다"]},
+ {w:"먹을지언정",p:"머글찌언정",t:["된소리되기"],src:"기출 2018년 7월 고3 학평 13번 ③ '(죽을) 먹을지언정'",x:"'-(으)ㄹ'로 시작하는 어미 '-을지언정'의 ㅈ이 ㅉ으로 바뀌어요.",n:["머글지언정","먹을찌언정"]},
+ {w:"앉을수록",p:"안즐쑤록",t:["된소리되기"],src:"기출 2018년 7월 고3 학평 13번 ④ '(바닥에) 앉을수록'",x:"'-(으)ㄹ'로 시작하는 어미 '-을수록'의 ㅅ이 ㅆ으로 바뀌어요. ㄵ의 ㅈ은 뒤 음절로 넘어가 발음돼요.",n:["안즐수록","안쯜수록"]},
+ {w:"기댈 곳이",p:"기댈 꼬시",t:["된소리되기"],src:"기출 2018년 7월 고3 학평 13번 ④ '(몸을) 기댈 곳이'",x:"관형사형 '-ㄹ' 뒤의 ㄱ이 ㄲ으로 바뀌어요.",n:["기댈 고시","기댈 곳이"]},
+ {w:"훑다",p:"훌따",t:["자음군 단순화","된소리되기"],src:"기출 2018년 7월 고3 학평 13번 ⑤ '(샅샅이) 훑다'",x:"ㄾ 중 ㅌ이 탈락하고, 어간 받침 ㄾ 뒤의 어미 ㄷ이 ㄸ이 돼요.",n:["훈따","훌다"]},
+ {w:"떠날지라도",p:"떠날찌라도",t:["된소리되기"],src:"기출 2018년 7월 고3 학평 13번 ⑤ '(내가) 떠날지라도'",x:"'-(으)ㄹ'로 시작하는 어미 '-ㄹ지라도'의 ㅈ이 ㅉ으로 바뀌어요.",n:["떠날지라도","떠나찌라도"]},
+ {w:"독립문",p:"동님문",t:["비음화"],src:"기출 2018년 7월 고3 학평 15번 (로마자 표기)",x:"ㄱ 뒤의 ㄹ이 ㄴ이 되고 그 ㄴ 때문에 ㄱ이 ㅇ이 돼요(상호동화). 또 ㅂ이 뒤의 ㅁ 때문에 ㅁ이 돼요. 로마자 표기는 발음대로 Dongnimmun이에요.",n:["동립문","독님문"]},
+ {w:"대관령",p:"대괄령",t:["유음화"],a:["역행","완전"],src:"기출 2018년 7월 고3 학평 15번 (로마자 표기)",x:"뒤의 ㄹ 때문에 ㄴ이 ㄹ로 똑같이 바뀌어요. 로마자 표기는 발음대로 Daegwallyeong이에요.",n:["대관녕","대관령"]},
+ {w:"잡다",p:"잡따",t:["된소리되기"],src:"기출 2019학년도 9월 모평 13번 ㉡ (japda)",x:"ㅂ 뒤의 ㄷ이 ㄸ이 돼요. 로마자 표기에는 된소리되기를 반영하지 않아 japda로 적어요.",n:["잡다","자따"]},
+ {w:"놓지",p:"노치",t:["거센소리되기"],src:"기출 2019학년도 9월 모평 13번 ㉢ (nochi)",x:"ㅎ과 ㅈ이 합쳐져 ㅊ이 돼요. 로마자 표기에도 반영해 nochi로 적어요.",n:["노지","놓지"]},
+ {w:"맨입",p:"맨닙",t:["ㄴ 첨가"],src:"기출 2019학년도 9월 모평 13번 ㉣ (maennip)",x:"'입' 앞에 ㄴ이 덧붙어요. 로마자 표기에도 반영해 maennip으로 적어요.",n:["매닙","맨밉"]},
+ {w:"백미",p:"뱅미",t:["비음화"],a:["역행","불완전"],src:"기출 2019학년도 9월 모평 13번 ㉤ (baengmi)",x:"뒤의 ㅁ 때문에 ㄱ이 ㅇ으로 바뀌어요. 로마자 표기에도 반영해 baengmi로 적어요.",n:["백미","배미"]},
+ {w:"땀받이",p:"땀바지",t:["구개음화"],a:["역행","불완전"],src:"기출 2019학년도 9월 모평 13번 ①",x:"받침 ㄷ이 접사 '-이' 앞에서 ㅈ으로 바뀌어요. '같이[가치]'와 같은 변동이에요.",n:["땀바디","땀바치"]},
+ {w:"삭제",p:"삭쩨",t:["된소리되기"],src:"기출 2019학년도 9월 모평 13번 ②",x:"ㄱ 뒤의 ㅈ이 ㅉ으로 바뀌어요.",n:["삭제","사쩨"]},
+ {w:"닳아",p:"다라",t:["ㅎ 탈락"],src:"기출 2019학년도 9월 모평 13번 ③",x:"ㅀ의 ㅎ이 모음 어미 앞에서 탈락하고 ㄹ이 뒤 음절로 넘어가요.",n:["달하","달타"]},
+ {w:"한여름",p:"한녀름",t:["ㄴ 첨가"],src:"기출 2019학년도 9월 모평 13번 ④",x:"'여름' 앞에 ㄴ이 덧붙어요.",n:["하녀름","할려름"]},
+ {w:"밥물",p:"밤물",t:["비음화"],a:["역행","완전"],src:"기출 2019학년도 9월 모평 13번 ⑤",x:"뒤의 ㅁ 때문에 ㅂ이 ㅁ으로 똑같이 바뀌어요.",n:["밥물","바물"]},
+ {w:"낳던",p:"나턴",t:["거센소리되기"],src:"기출 2018년 10월 고3 학평 11번 ⓐ",x:"ㅎ과 ㄷ이 합쳐져 ㅌ이 돼요.",n:["나던","낟던"]},
+ {w:"쌓지",p:"싸치",t:["거센소리되기"],src:"기출 2018년 10월 고3 학평 11번 ⓐ",x:"ㅎ과 ㅈ이 합쳐져 ㅊ이 돼요.",n:["싸지","싿치"]},
+ {w:"닿소",p:"다쏘",t:["음절의 끝소리 규칙","된소리되기"],src:"기출 2018년 10월 고3 학평 11번 ⓑ",x:"받침 ㅎ이 음절 끝에서 [ㄷ]으로 바뀌고(음절의 끝소리 규칙), 그 뒤의 ㅅ이 ㅆ으로 바뀌어요(된소리되기). ㅎ과 ㅅ이 하나로 합쳐진 축약이 아니에요.",n:["다소","닫쏘"]},
+ {w:"놓는",p:"논는",t:["음절의 끝소리 규칙","비음화"],a:["역행","완전"],src:"기출 2018년 10월 고3 학평 11번 ⓒ",x:"받침 ㅎ이 ㄷ이 되고(끝소리 규칙), 그 ㄷ이 뒤의 ㄴ 때문에 ㄴ이 돼요(비음화). 교체가 두 번 일어나요.",n:["노는","녿는"]},
+ {w:"많네",p:"만네",t:["ㅎ 탈락"],src:"기출 2018년 10월 고3 학평 11번 ⓓ",x:"ㄶ 뒤에 ㄴ이 오면 ㅎ을 발음하지 않아요.",n:["마네","만테"]},
+ {w:"낳은",p:"나은",t:["ㅎ 탈락"],src:"기출 2018년 10월 고3 학평 11번 ⓔ",x:"받침 ㅎ이 모음으로 시작하는 형식 형태소 앞에서 탈락해요.",n:["나흔","나튼"]},
+ {w:"놓아",p:"노아",t:["ㅎ 탈락"],src:"기출 2018년 10월 고3 학평 11번 ⓔ",x:"받침 ㅎ이 모음 어미 앞에서 탈락해요.",n:["노하","노타"]},
+ {w:"쌓이다",p:"싸이다",t:["ㅎ 탈락"],src:"기출 2018년 10월 고3 학평 11번 ⓔ",x:"받침 ㅎ이 모음으로 시작하는 접사 '-이-' 앞에서 탈락해요.",n:["싸히다","싸치다"]},
+ {w:"맑네",p:"망네",t:["자음군 단순화","비음화"],a:["역행","불완전"],src:"기출 2017학년도 6월 모평 13번 ㉠",x:"ㄺ 중 ㄹ이 탈락하고(자음군 단순화), 남은 ㄱ이 ㄴ 앞에서 ㅇ이 돼요(비음화).",n:["말레","막네"]},
+ {w:"낮일",p:"난닐",t:["음절의 끝소리 규칙","ㄴ 첨가","비음화"],a:["역행","완전"],src:"기출 2017학년도 6월 모평 13번 ㉡",x:"ㅈ이 ㄷ이 되고(끝소리 규칙), '일' 앞에 ㄴ이 덧붙고(ㄴ 첨가), 그 ㄴ 때문에 ㄷ이 ㄴ이 돼요(비음화).",n:["나질","낟닐"]},
+ {w:"꽃말",p:"꼰말",t:["음절의 끝소리 규칙","비음화"],a:["역행","불완전"],src:"기출 2017학년도 6월 모평 13번 ㉢",x:"ㅊ이 ㄷ이 되고(끝소리 규칙), 그 ㄷ이 뒤의 ㅁ 때문에 비음 ㄴ이 돼요(비음화).",n:["꼼말","꼳말"]},
+ {w:"긁고",p:"글꼬",t:["자음군 단순화","된소리되기"],src:"기출 2017학년도 6월 모평 13번 ㉣",x:"용언 어간의 ㄺ은 ㄱ 앞에서 ㄹ로 발음해 ㄱ이 탈락하고, 겹받침 뒤의 ㄱ이 ㄲ이 돼요. 축약은 일어나지 않아요.",n:["극꼬","글고"]},
+ {w:"값도",p:"갑또",t:["자음군 단순화","된소리되기"],src:"기출 2017학년도 6월 모평 13번 ①",x:"음절 끝에 두 자음이 올 수 없어 ㅄ 중 ㅅ이 탈락하고, ㅂ 뒤의 ㄷ이 ㄸ이 돼요.",n:["갑도","갓또"]},
+ {w:"입니",p:"임니",t:["비음화"],a:["역행","불완전"],src:"기출 2017학년도 6월 모평 13번 ② '입+니'",x:"뒤의 비음 ㄴ 때문에 ㅂ이 비음 ㅁ이 돼요. 인접한 자음과 조음 방법이 같아지는 변동이에요.",n:["입니","이니"]},
+ {w:"팥죽",p:"팓쭉",t:["음절의 끝소리 규칙","된소리되기"],src:"기출 2017학년도 6월 모평 13번 ④",x:"음절 끝 ㅌ이 ㄷ이 되고(끝소리 규칙), 그 뒤의 ㅈ이 ㅉ이 돼요.",n:["팟죽","파쭉"]},
+ {w:"잃지",p:"일치",t:["거센소리되기"],src:"기출 2017학년도 6월 모평 13번 ⑤",x:"ㅀ의 ㅎ과 뒤의 ㅈ이 합쳐져 ㅊ이 돼요.",n:["일지","일찌"]},
+ {w:"꽂힌",p:"꼬친",t:["거센소리되기"],src:"기출 2017학년도 수능 12번 ①",x:"ㅈ과 ㅎ이 합쳐져 ㅊ이 돼요. 종성 교체가 일어나기 전에 축약돼요.",n:["꼬진","꼳힌"]},
+ {w:"몫이",p:"목씨",t:["된소리되기"],src:"기출 2017학년도 수능 12번 ②",x:"ㄳ의 ㅅ은 탈락하지 않고 뒤 음절로 넘어가, ㄱ 뒤에서 ㅆ이 돼요. 자음군 단순화가 일어나지 않아요.",n:["모기","목시"]},
+ {w:"비옷",p:"비옫",t:["음절의 끝소리 규칙"],src:"기출 2017학년도 수능 12번 ③",x:"음절 끝의 마찰음 ㅅ이 파열음 ㄷ으로 바뀌어요. 자음이 하나뿐이라 탈락은 없어요.",n:["비옷","비오"]},
+ {w:"않고",p:"안코",t:["거센소리되기"],src:"기출 2017학년도 수능 12번 ④",x:"ㄶ의 ㅎ과 뒤의 ㄱ이 합쳐져 ㅋ이 돼요.",n:["안고","안꼬"]},
+ {w:"읊고",p:"읍꼬",t:["자음군 단순화","음절의 끝소리 규칙","된소리되기"],src:"기출 2017학년도 수능 12번 ⑤",x:"ㄿ 중 ㄹ이 탈락하고(자음군 단순화), 남은 ㅍ이 ㅂ이 되며(끝소리 규칙), 그 뒤의 ㄱ이 ㄲ이 돼요.",n:["을꼬","읍고"]},
+ {w:"붙인",p:"부친",t:["구개음화"],a:["역행","불완전"],src:"기출 2017년 4월 고3 학평 11번 ㉠",x:"받침 ㅌ이 접미사 '-이-'의 ㅣ 앞에서 ㅊ이 돼요.",n:["부틴","부진"]},
+ {w:"밭이랑",p:"반니랑",t:["음절의 끝소리 규칙","ㄴ 첨가","비음화"],a:["역행","완전"],src:"기출 2017년 4월 고3 학평 11번 ㉢",x:"'이랑'은 실질 형태소라 구개음화가 일어나지 않아요. ㅌ이 ㄷ이 되고, ㄴ이 덧붙고, ㄷ이 ㄴ이 돼요.",n:["바치랑","바티랑"]},
+ {w:"홑이불",p:"혼니불",t:["음절의 끝소리 규칙","ㄴ 첨가","비음화"],a:["역행","완전"],src:"기출 2017년 4월 고3 학평 11번 ㉤",x:"'이불'은 실질 형태소라 구개음화가 일어나지 않아요. ㅌ이 ㄷ이 되고, ㄴ이 덧붙고, ㄷ이 ㄴ이 돼요.",n:["호치불","호디불"]},
+ {w:"흙하고",p:"흐카고",t:["자음군 단순화","거센소리되기"],src:"기출 2018학년도 6월 모평 13번 ①",x:"ㄺ 중 ㄹ이 탈락하고(탈락), ㄱ과 ㅎ이 ㅋ으로 합쳐져요(축약). 음운 개수가 두 개 줄어요.",n:["흘가고","흑하고"]},
+ {w:"저녁연기",p:"저녕년기",t:["ㄴ 첨가","비음화"],a:["역행","불완전"],src:"기출 2018학년도 6월 모평 13번 ②",x:"'연기' 앞에 ㄴ이 덧붙고(첨가), 그 ㄴ 때문에 ㄱ이 ㅇ이 돼요(교체). 음운 개수는 하나 늘어요.",n:["저녀견기","저녁년기"]},
+ {w:"부엌문",p:"부엉문",t:["음절의 끝소리 규칙","비음화"],a:["역행","불완전"],src:"기출 2018학년도 6월 모평 13번 ③",x:"ㅋ이 ㄱ이 되고(끝소리 규칙), 그 ㄱ이 ㅁ 앞에서 ㅇ이 돼요(비음화). 교체가 두 번 일어나요.",n:["부억문","부어문"]},
+ {w:"볶는",p:"봉는",t:["음절의 끝소리 규칙","비음화"],a:["역행","불완전"],src:"기출 2018학년도 6월 모평 13번 ③",x:"ㄲ이 ㄱ이 되고(끝소리 규칙), 그 ㄱ이 ㄴ 앞에서 ㅇ이 돼요(비음화). 교체가 두 번 일어나요.",n:["복는","보는"]},
+ {w:"얹지",p:"언찌",t:["자음군 단순화","된소리되기"],src:"기출 2018학년도 6월 모평 13번 ④",x:"ㄵ 중 ㅈ이 탈락하고(탈락), 어간 받침 ㄵ 뒤의 ㅈ이 ㅉ이 돼요(교체). 축약은 없어요.",n:["언지","얻찌"]},
+ {w:"묽고",p:"물꼬",t:["자음군 단순화","된소리되기"],src:"기출 2018학년도 6월 모평 13번 ④",x:"용언 어간의 ㄺ은 ㄱ 앞에서 ㄹ로 발음해 ㄱ이 탈락하고(탈락), 그 뒤의 ㄱ이 ㄲ이 돼요(교체).",n:["묵꼬","물고"]},
+ {w:"넓네",p:"널레",t:["자음군 단순화","유음화"],a:["순행","완전"],src:"기출 2018학년도 6월 모평 13번 ⑤",x:"ㄼ 중 ㅂ이 탈락하고(탈락), 앞의 ㄹ 때문에 ㄴ이 ㄹ이 돼요(교체). 음운 개수는 하나 줄어요.",n:["넘네","넙네"]},
+ {w:"밝는",p:"방는",t:["자음군 단순화","비음화"],a:["역행","불완전"],src:"기출 2018학년도 6월 모평 13번 ⑤",x:"ㄺ 중 ㄹ이 탈락하고(탈락), ㄱ이 ㄴ 앞에서 ㅇ이 돼요(교체). 음운 개수는 하나 줄어요.",n:["발른","박는"]},
+ {w:"집일",p:"짐닐",t:["ㄴ 첨가","비음화"],a:["역행","불완전"],src:"기출 2018학년도 6월 모평 13번 <보기>",x:"'일' 앞에 ㄴ이 덧붙고(첨가), 그 ㄴ 때문에 ㅂ이 ㅁ이 돼요(교체). 음운 개수가 늘어요.",n:["지빌","집닐"]},
+ {w:"닭만",p:"당만",t:["자음군 단순화","비음화"],a:["역행","불완전"],src:"기출 2018학년도 6월 모평 13번 <보기>",x:"ㄺ 중 ㄹ이 탈락하고(탈락), ㄱ이 ㅁ 앞에서 ㅇ이 돼요(교체). 음운 개수가 줄어요.",n:["달만","닥만"]},
+ {w:"뜻하다",p:"뜨타다",t:["음절의 끝소리 규칙","거센소리되기"],src:"기출 2018학년도 6월 모평 13번 <보기>",x:"ㅅ이 ㄷ이 되고(교체), 그 ㄷ과 ㅎ이 ㅌ으로 합쳐져요(축약). 음운 개수가 줄어요.",n:["뜨사다","뜯하다"]},
+ {w:"맡는",p:"만는",t:["음절의 끝소리 규칙","비음화"],a:["역행","완전"],src:"기출 2018학년도 6월 모평 13번 <보기>",x:"ㅌ이 ㄷ이 되고, 그 ㄷ이 뒤의 ㄴ 때문에 ㄴ이 돼요. 교체가 두 번 일어나 음운 개수는 그대로예요.",n:["맏는","마는"]},
+ {w:"꽃밭",p:"꼳빧",t:["음절의 끝소리 규칙","된소리되기"],src:"기출 2017년 7월 고3 학평 11번 <보기>",x:"두 받침 ㅊ, ㅌ이 모두 ㄷ이 되고, 그 뒤의 ㅂ이 ㅃ이 돼요. 교체 한 가지 유형만 나타나요.",n:["꼬빧","꼳받"]},
+ {w:"꽃잎",p:"꼰닙",t:["음절의 끝소리 규칙","ㄴ 첨가","비음화"],a:["역행","완전"],src:"기출 2017년 7월 고3 학평 11번 <보기>",x:"ㅊ이 ㄷ, ㅍ이 ㅂ이 되고, '잎' 앞에 ㄴ이 덧붙고, ㄷ이 그 ㄴ 때문에 ㄴ이 돼요. 교체와 첨가가 나타나요.",n:["꼬칩","꼳닙"]},
+ {w:"깎다",p:"깍따",t:["음절의 끝소리 규칙","된소리되기"],src:"기출 2017년 7월 고3 학평 11번 ①",x:"ㄲ이 ㄱ이 되고, 그 뒤의 ㄷ이 ㄸ이 돼요. 교체 한 가지 유형만 나타나요.",n:["깍다","까따"]},
+ {w:"막일",p:"망닐",t:["ㄴ 첨가","비음화"],a:["역행","불완전"],src:"기출 2017년 7월 고3 학평 11번 ②",x:"'일' 앞에 ㄴ이 덧붙고(첨가), ㄱ이 그 ㄴ 앞에서 ㅇ이 돼요(교체).",n:["마길","막닐"]},
+ {w:"값하다",p:"가파다",t:["자음군 단순화","거센소리되기"],src:"기출 2017년 7월 고3 학평 11번 ④",x:"ㅄ 중 ㅅ이 탈락하고(탈락), ㅂ과 ㅎ이 ㅍ으로 합쳐져요(축약).",n:["갑하다","가바다"]},
+ {w:"설익다",p:"설릭따",t:["ㄴ 첨가","유음화","된소리되기"],a:["순행","완전"],src:"기출 2017년 7월 고3 학평 11번 ⑤",x:"'익다' 앞에 ㄴ이 덧붙고(첨가), 그 ㄴ이 앞의 ㄹ 때문에 ㄹ이 되며, ㄱ 뒤의 ㄷ이 ㄸ이 돼요(교체).",n:["서릭따","설닉따"]},
+ {w:"낱알",p:"나달",t:["음절의 끝소리 규칙"],src:"기출 2017년 10월 고3 학평 12번 ②",x:"'알'은 실질 형태소라 ㅌ이 먼저 ㄷ으로 바뀐 뒤 연음돼요. 조사 '으로'가 붙으면 곧바로 연음되어 [나트로]가 돼요.",n:["나탈","난날"]},
+ {w:"앞어금니",p:"아버금니",t:["음절의 끝소리 규칙"],src:"기출 2017년 10월 고3 학평 12번 ③",x:"'어금니'가 실질 형태소라 ㅍ이 먼저 ㅂ으로 바뀐 뒤 연음돼요.",n:["아퍼금니","압어금니"]},
+ {w:"겉웃음",p:"거두슴",t:["음절의 끝소리 규칙"],src:"기출 2017년 10월 고3 학평 12번 ④",x:"'웃음'이 실질 형태소라 ㅌ이 먼저 ㄷ으로 바뀐 뒤 연음돼요.",n:["거투슴","걷우슴"]},
+ {w:"홑옷",p:"호돋",t:["음절의 끝소리 규칙"],src:"기출 2017년 10월 고3 학평 12번 <보기>",x:"'옷'이 실질 형태소라 ㅌ이 먼저 ㄷ이 된 뒤 연음되고, 끝의 ㅅ도 ㄷ이 돼요.",n:["호톳","호톧"]},
+ {w:"흙일",p:"흥닐",t:["자음군 단순화","ㄴ 첨가","비음화"],a:["역행","불완전"],src:"기출 2018학년도 수능 14번 ㉠",x:"ㄺ 중 ㄹ이 탈락하고, '일' 앞에 ㄴ이 덧붙고, ㄱ이 그 ㄴ 앞에서 ㅇ이 돼요. 탈락·첨가·교체가 한 번씩이라 음운 개수는 그대로예요.",n:["흘길","흑닐"]},
+ {w:"닳는",p:"달른",t:["ㅎ 탈락","유음화"],a:["순행","완전"],src:"기출 2018학년도 수능 14번 ㉡",x:"ㅀ의 ㅎ이 ㄴ 앞에서 발음되지 않고(탈락), 앞의 ㄹ 때문에 ㄴ이 ㄹ이 돼요(교체). 첨가는 없어요.",n:["단는","달는"]},
+ {w:"발야구",p:"발랴구",t:["ㄴ 첨가","유음화"],a:["순행","완전"],src:"기출 2018학년도 수능 14번 ㉢",x:"'야구' 앞에 ㄴ이 덧붙고(첨가), 앞의 ㄹ 때문에 그 ㄴ이 ㄹ이 돼요(교체).",n:["바랴구","발냐구"]},
+ {w:"쓰+어",p:"써",t:["ㅡ 탈락"],src:"교과서 예",x:"어간 '쓰-'의 ㅡ가 모음 어미 '-어' 앞에서 사라져요.",form:1},
+ {w:"담그+아",p:"담가",t:["ㅡ 탈락"],src:"교과서 예",x:"어간 '담그-'의 ㅡ가 '-아' 앞에서 사라져요.",form:1},
+ {w:"크+어서",p:"커서",t:["ㅡ 탈락"],src:"교과서 예",x:"어간 '크-'의 ㅡ가 '-어서' 앞에서 사라져요.",form:1},
+ {w:"끄+어",p:"꺼",t:["ㅡ 탈락"],src:"교과서 예",x:"어간 '끄-'의 ㅡ가 '-어' 앞에서 사라져요.",form:1},
+ {w:"바쁘+아",p:"바빠",t:["ㅡ 탈락"],src:"교과서 예",x:"어간 '바쁘-'의 ㅡ가 '-아' 앞에서 사라져요.",form:1},
+ {w:"가+아서",p:"가서",t:["동음 탈락"],src:"교과서 예",x:"어간 '가-'의 ㅏ와 어미 '-아서'의 ㅏ가 겹쳐 하나가 사라져요.",form:1},
+ {w:"서+어",p:"서",t:["동음 탈락"],src:"교과서 예",x:"어간 '서-'의 ㅓ와 어미 '-어'의 ㅓ가 겹쳐 하나가 사라져요.",form:1},
+ {w:"타+아라",p:"타라",t:["동음 탈락"],src:"교과서 예",x:"어간 '타-'의 ㅏ와 어미 '-아라'의 ㅏ가 겹쳐 하나가 사라져요.",form:1},
+ {w:"사이",p:"새",t:["모음 축약"],src:"교과서 예",x:"ㅏ와 ㅣ가 합쳐져 ㅐ 하나가 돼요. 음운이 하나 줄어요.",form:1},
+ {w:"아이",p:"애",t:["모음 축약"],src:"교과서 예",x:"ㅏ와 ㅣ가 합쳐져 ㅐ 하나가 돼요. 음운이 하나 줄어요.",form:1}
+];
+
+const RULES = [
+ {sec:"받침의 발음", types:["음절의 끝소리 규칙","자음군 단순화"], arts:[
+  {no:"제8항", cl:[{k:"",t:"받침소리로는 ‘ㄱ, ㄴ, ㄷ, ㄹ, ㅁ, ㅂ, ㅇ’의 7개 자음만 발음한다.",ex:"",links:[]}]},
+  {no:"제9항", cl:[{k:"",t:"받침 ‘ㄲ, ㅋ’, ‘ㅅ, ㅆ, ㅈ, ㅊ, ㅌ’, ‘ㅍ’은 어말 또는 자음 앞에서 각각 대표음 [ㄱ, ㄷ, ㅂ]으로 발음한다.",ex:"닦다[닥따], 키읔[키윽], 옷[옫], 있다[읻따], 꽃[꼳], 솥[솓], 앞[압], 덮다[덥따]",links:["사이시옷","비옷","있다","갖고","싶다","깎다","꽃밭","팥죽","앞발","옷걸이","꽃다발"]}]},
+  {no:"제10항", cl:[
+   {k:"",t:"겹받침 ‘ㄳ’, ‘ㄵ’, ‘ㄼ, ㄽ, ㄾ’, ‘ㅄ’은 어말 또는 자음 앞에서 각각 [ㄱ, ㄴ, ㄹ, ㅂ]으로 발음한다.",ex:"넋[넉], 앉다[안따], 여덟[여덜], 넓다[널따], 외곬[외골], 핥다[할따], 값[갑]",links:["넋두리","앉다","짧다","핥지만","훑다","얹지","넓네","짧네","값도","밥값","값하다","삯일"]},
+   {k:"다만",t:"‘밟-’은 자음 앞에서 [밥]으로 발음하고, ‘넓-’은 ‘넓죽하다, 넓둥글다’ 등에서 [넙]으로 발음한다.",ex:"밟다[밥ː따], 밟는[밤ː는], 넓죽하다[넙쭈카다], 넓둥글다[넙뚱글다]",links:["밟는","넓죽하다"]}]},
+  {no:"제11항", cl:[
+   {k:"",t:"겹받침 ‘ㄺ, ㄻ, ㄿ’은 어말 또는 자음 앞에서 각각 [ㄱ, ㅁ, ㅂ]으로 발음한다.",ex:"닭[닥], 흙과[흑꽈], 맑다[막따], 늙지[늑찌], 삶[삼ː], 젊다[점ː따], 읊고[읍꼬]",links:["읽다","맑네","밝는","긁는","닭만","흙일","흙하고","굵다랗다","긁적긁적","삶고","읊고","읊조리다"]},
+   {k:"다만",t:"용언의 어간 말음 ‘ㄺ’은 ‘ㄱ’ 앞에서 [ㄹ]로 발음한다.",ex:"맑게[말께], 묽고[물꼬], 얽거나[얼꺼나]",links:["긁고","묽고"]}]}
+ ]},
+ {sec:"받침 ‘ㅎ’의 발음", types:["거센소리되기","ㅎ 탈락","음절의 끝소리 규칙"], arts:[
+  {no:"제12항", cl:[
+   {k:"1",t:"‘ㅎ(ㄶ, ㅀ)’ 뒤에 ‘ㄱ, ㄷ, ㅈ’이 결합되는 경우에는, 뒤 음절 첫소리와 합쳐서 [ㅋ, ㅌ, ㅊ]으로 발음한다.",ex:"놓고[노코], 좋던[조ː턴], 쌓지[싸치], 많고[만ː코], 않던[안턴], 닳지[달치]",links:["놓고","놓다","좋다","많다","낳던","쌓지","놓지","않고","끊기고","뚫지","잃지","닳고","넣거나","빨갛다"]},
+   {k:"1 [붙임 1]",t:"받침 ‘ㄱ(ㄺ), ㄷ, ㅂ(ㄼ), ㅈ(ㄵ)’이 뒤 음절 첫소리 ‘ㅎ’과 결합되는 경우에도, 역시 두 음을 합쳐서 [ㅋ, ㅌ, ㅍ, ㅊ]으로 발음한다.",ex:"각하[가카], 먹히다[머키다], 밝히다[발키다], 맏형[마텽], 좁히다[조피다], 넓히다[널피다], 꽂히다[꼬치다], 앉히다[안치다]",links:["국화","입학식","정확하게","분석한","산책하러","복합어","바람직한","잡혔다","척박하다","꽂힌","흙하고","값하다"]},
+   {k:"1 [붙임 2]",t:"규정에 따라 ‘ㄷ’으로 발음되는 ‘ㅅ, ㅈ, ㅊ, ㅌ’의 경우에도 이에 준한다.",ex:"옷 한 벌[오탄벌], 낮 한때[나탄때], 꽃 한 송이[꼬탄송이], 숱하다[수타다]",links:["뜻하다"]},
+   {k:"2",t:"‘ㅎ(ㄶ, ㅀ)’ 뒤에 ‘ㅅ’이 결합되는 경우에는, ‘ㅅ’을 [ㅆ]으로 발음한다.",ex:"닿소[다ː쏘], 많소[만ː쏘], 싫소[실쏘]",links:["닿소"]},
+   {k:"3",t:"‘ㅎ’ 뒤에 ‘ㄴ’이 결합되는 경우에는, [ㄴ]으로 발음한다.",ex:"놓는[논는], 쌓네[싼네]",links:["놓는"]},
+   {k:"3 [붙임]",t:"‘ㄶ, ㅀ’ 뒤에 ‘ㄴ’이 결합되는 경우에는, ‘ㅎ’을 발음하지 않는다.",ex:"않네[안네], 않는[안는], 뚫네[뚤네→뚤레], 뚫는[뚤는→뚤른]",links:["않는다","많네","닳는"]},
+   {k:"4",t:"‘ㅎ(ㄶ, ㅀ)’ 뒤에 모음으로 시작된 어미나 접미사가 결합되는 경우에는, ‘ㅎ’을 발음하지 않는다.",ex:"낳은[나은], 놓아[노아], 쌓이다[싸이다], 많아[마ː나], 않은[아는], 닳아[다라], 싫어도[시러도]",links:["좋은","많은","넣으면","좋아하는","낳은","놓아","쌓이다","닳아","싫어"]}]}
+ ]},
+ {sec:"받침의 연음 (참고)", types:["음절의 끝소리 규칙"], note:"연음은 음운 변동이 아니지만, 음절의 끝소리 규칙이 먼저 일어나는지 판단할 때 함께 봐야 해요.", arts:[
+  {no:"제13항", cl:[{k:"",t:"홑받침이나 쌍받침이 모음으로 시작된 조사나 어미, 접미사와 결합되는 경우에는, 제 음가대로 뒤 음절 첫소리로 옮겨 발음한다.",ex:"깎아[까까], 옷이[오시], 꽂아[꼬자], 밭에[바테], 앞으로[아프로]",links:[]}]},
+  {no:"제14항", cl:[{k:"",t:"겹받침이 모음으로 시작된 조사나 어미, 접미사와 결합되는 경우에는, 뒤엣것만을 뒤 음절 첫소리로 옮겨 발음한다. (이 경우, ‘ㅅ’은 된소리로 발음함.)",ex:"넋이[넉씨], 앉아[안자], 닭을[달글], 젊어[절머], 값을[갑쓸], 없어[업ː써]",links:["몫이"]}]},
+  {no:"제15항", cl:[{k:"",t:"받침 뒤에 모음 ‘ㅏ, ㅓ, ㅗ, ㅜ, ㅟ’들로 시작되는 실질 형태소가 연결되는 경우에는, 대표음으로 바꾸어서 뒤 음절 첫소리로 옮겨 발음한다.",ex:"밭 아래[바다래], 늪 앞[느밥], 젖어미[저더미], 맛없다[마덥따], 겉옷[거돋], 헛웃음[허두슴], 꽃 위[꼬뒤]",links:["낱알","앞어금니","겉웃음","홑옷"]}]}
+ ]},
+ {sec:"구개음화", types:["구개음화"], arts:[
+  {no:"제17항", cl:[
+   {k:"",t:"받침 ‘ㄷ, ㅌ(ㄾ)’이 조사나 접미사의 모음 ‘ㅣ’와 결합되는 경우에는, [ㅈ, ㅊ]으로 바꾸어서 뒤 음절 첫소리로 옮겨 발음한다.",ex:"곧이듣다[고지듣따], 굳이[구지], 미닫이[미ː다지], 땀받이[땀바지], 밭이[바치], 벼훑이[벼훌치]",links:["같이","붙이면","덧붙이는","붙인","땀받이","낱낱이"]},
+   {k:"[붙임]",t:"‘ㄷ’ 뒤에 접미사 ‘히’가 결합되어 ‘티’를 이루는 것은 [치]로 발음한다.",ex:"굳히다[구치다], 닫히다[다치다], 묻히다[무치다]",links:["닫힌","묻히다"]}]}
+ ]},
+ {sec:"비음화", types:["비음화"], arts:[
+  {no:"제18항", cl:[
+   {k:"",t:"받침 ‘ㄱ(ㄲ, ㅋ, ㄳ, ㄺ), ㄷ(ㅅ, ㅆ, ㅈ, ㅊ, ㅌ, ㅎ), ㅂ(ㅍ, ㄼ, ㄿ, ㅄ)’은 ‘ㄴ, ㅁ’ 앞에서 [ㅇ, ㄴ, ㅁ]으로 발음한다.",ex:"먹는[멍는], 국물[궁물], 깎는[깡는], 긁는[긍는], 닫는[단는], 있는[인는], 꽃망울[꼰망울], 놓는[논는], 잡는[잠는], 밥물[밤물], 밟는[밤ː는], 없는[엄ː는]",links:["국물","숙녀","막내","함박눈","백미","받는","있는","있습니다","겹문장","홑문장","집념","밥물","입니","볶는","부엌문","맡는","꽃말","맑네","밝는","긁는","닭만","밟는"]},
+   {k:"[붙임]",t:"두 단어를 이어서 한 마디로 발음하는 경우에도 이와 같다.",ex:"책 넣는다[챙넌는다], 흙 말리다[흥말리다], 옷 맞추다[온마추다], 밥 먹는다[밤멍는다]",links:[]}]},
+  {no:"제19항", cl:[
+   {k:"",t:"받침 ‘ㅁ, ㅇ’ 뒤에 연결되는 ‘ㄹ’은 [ㄴ]으로 발음한다.",ex:"담력[담ː녁], 침략[침냑], 강릉[강능], 항로[항ː노], 대통령[대ː통녕]",links:[]},
+   {k:"[붙임]",t:"받침 ‘ㄱ, ㅂ’ 뒤에 연결되는 ‘ㄹ’도 [ㄴ]으로 발음한다.",ex:"막론[막논→망논], 석류[석뉴→성뉴], 협력[협녁→혐녁], 법리[법니→범니]",links:["생략","독립문"]}]}
+ ]},
+ {sec:"유음화", types:["유음화"], arts:[
+  {no:"제20항", cl:[
+   {k:"",t:"‘ㄴ’은 ‘ㄹ’의 앞이나 뒤에서 [ㄹ]로 발음한다.",ex:"난로[날ː로], 신라[실라], 천리[철리], 대관령[대ː괄령], 칼날[칼랄], 물난리[물랄리], 줄넘기[줄럼끼]",links:["분류","대관령","짧네","넓네"]},
+   {k:"[붙임]",t:"첫소리 ‘ㄴ’이 ‘ㅀ’, ‘ㄾ’ 뒤에 연결되는 경우에도 이에 준한다.",ex:"닳는[달른], 뚫는[뚤른], 핥네[할레]",links:["닳는"]},
+   {k:"다만",t:"다음과 같은 단어들은 ‘ㄹ’을 [ㄴ]으로 발음한다.",ex:"의견란[의ː견난], 생산량[생산냥], 결단력[결딴녁], 공권력[공꿘녁], 상견례[상견녜], 입원료[이붠뇨]",links:[]}]},
+  {no:"제21항", cl:[{k:"",t:"위에서 지적한 이외의 자음 동화는 인정하지 않는다.",ex:"감기[감ː기](×[강ː기]), 옷감[옫깜](×[옥깜]), 있고[읻꼬](×[익꼬]), 꽃길[꼳낄](×[꼭낄]), 젖먹이[전머기](×[점머기]), 문법[문뻡](×[뭄뻡]), 꽃밭[꼳빧](×[꼽빧])",links:["꽃밭"]}], note:"소리 나는 자리를 닮는 동화(연구개음화·양순음화)는 표준 발음이 아니에요."}
+ ]},
+ {sec:"반모음 첨가", types:["반모음 첨가"], arts:[
+  {no:"제22항", cl:[
+   {k:"",t:"다음과 같은 용언의 어미는 [어]로 발음함을 원칙으로 하되, [여]로 발음함도 허용한다.",ex:"되어[되어/되여], 피어[피어/피여]",links:["피었다"]},
+   {k:"[붙임]",t:"‘이오, 아니오’도 이에 준하여 [이요], [아니요]로 발음함을 허용한다.",ex:"",links:[]}]}
+ ]},
+ {sec:"된소리되기", types:["된소리되기"], arts:[
+  {no:"제23항", cl:[{k:"",t:"받침 ‘ㄱ(ㄲ, ㅋ, ㄳ, ㄺ), ㄷ(ㅅ, ㅆ, ㅈ, ㅊ, ㅌ), ㅂ(ㅍ, ㄼ, ㄿ, ㅄ)’ 뒤에 연결되는 ‘ㄱ, ㄷ, ㅂ, ㅅ, ㅈ’은 된소리로 발음한다.",ex:"국밥[국빱], 깎다[깍따], 닭장[닥짱], 옷고름[옫꼬름], 있던[읻떤], 꽃다발[꼳따발], 곱돌[곱똘], 덮개[덥깨], 옆집[엽찝]",links:["국밥","곧잘","뜯긴","갑자기","국수","몹시","받고","먹고서","직접","신입생","학습","각각","식당","목적어","삭제","잡다","꽃다발","팥죽","넋두리","값도","속삭였다","적절하지","자연스럽지","봅시다"]}]},
+  {no:"제24항", cl:[
+   {k:"",t:"어간 받침 ‘ㄴ(ㄵ), ㅁ(ㄻ)’ 뒤에 결합되는 어미의 첫소리 ‘ㄱ, ㄷ, ㅅ, ㅈ’은 된소리로 발음한다.",ex:"신고[신ː꼬], 껴안다[껴안따], 앉고[안꼬], 얹다[언따], 삼고[삼ː꼬], 더듬지[더듬찌], 닮고[담ː꼬], 젊지[점ː찌]",links:["신고","담기","삶고","앉다","얹지"]},
+   {k:"다만",t:"피동, 사동의 접미사 ‘-기-’는 된소리로 발음하지 않는다.",ex:"안기다, 감기다, 굶기다, 옮기다",links:[]}]},
+  {no:"제25항", cl:[{k:"",t:"어간 받침 ‘ㄼ, ㄾ’ 뒤에 결합되는 어미의 첫소리 ‘ㄱ, ㄷ, ㅅ, ㅈ’은 된소리로 발음한다.",ex:"넓게[널께], 핥다[할따], 훑소[훌쏘], 떫지[떨ː찌]",links:["핥지만","훑다","짧다"]}]},
+  {no:"제26항", cl:[
+   {k:"",t:"한자어에서, ‘ㄹ’ 받침 뒤에 연결되는 ‘ㄷ, ㅅ, ㅈ’은 된소리로 발음한다.",ex:"갈등[갈뜽], 발동[발똥], 절도[절또], 말살[말쌀], 일시[일씨], 갈증[갈쯩], 물질[물찔], 발전[발쩐]",links:[]},
+   {k:"다만",t:"같은 한자가 겹쳐진 단어의 경우에는 된소리로 발음하지 않는다.",ex:"허허실실[허허실실], 절절하다[절절하다]",links:[]}]},
+  {no:"제27항", cl:[
+   {k:"",t:"관형사형 ‘-(으)ㄹ’ 뒤에 연결되는 ‘ㄱ, ㄷ, ㅂ, ㅅ, ㅈ’은 된소리로 발음한다.",ex:"할 것을[할꺼슬], 갈 데가[갈떼가], 할 바를[할빠를], 할 수는[할쑤는], 갈 곳[갈꼳], 만날 사람[만날싸람]",links:["쓰일 수","파악할 수","기댈 곳이"]},
+   {k:"[붙임]",t:"‘-(으)ㄹ’로 시작되는 어미의 경우에도 이에 준한다.",ex:"할걸[할껄], 할밖에[할빠께], 할수록[할쑤록], 할지라도[할찌라도], 할지언정[할찌언정]",links:["먹을지언정","앉을수록","떠날지라도"]}]},
+  {no:"제28항", cl:[{k:"",t:"표기상으로는 사이시옷이 없더라도, 관형격 기능을 지니는 사이시옷이 있어야 할(휴지가 성립되는) 합성어의 경우에는, 뒤 단어의 첫소리 ‘ㄱ, ㄷ, ㅂ, ㅅ, ㅈ’을 된소리로 발음한다.",ex:"문고리[문꼬리], 눈동자[눈똥자], 산새[산쌔], 길가[길까], 발바닥[발빠닥], 술잔[술짠], 그믐달[그믐딸], 강가[강까], 등불[등뿔]",links:["눈물샘"]}]}
+ ]},
+ {sec:"ㄴ 첨가", types:["ㄴ 첨가"], arts:[
+  {no:"제29항", cl:[
+   {k:"",t:"합성어 및 파생어에서, 앞 단어나 접두사의 끝이 자음이고 뒤 단어나 접미사의 첫음절이 ‘이, 야, 여, 요, 유’인 경우에는, ‘ㄴ’ 음을 첨가하여 [니, 냐, 녀, 뇨, 뉴]로 발음한다.",ex:"솜이불[솜ː니불], 홑이불[혼니불], 막일[망닐], 삯일[상닐], 맨입[맨닙], 꽃잎[꼰닙], 한여름[한녀름], 색연필[생년필], 담요[담ː뇨]",links:["색연필","맨입","한여름","막일","집일","저녁연기","흙일","첫여름","낮일","꽃잎","밭이랑","홑이불","삯일"]},
+   {k:"다만",t:"‘이죽이죽, 야금야금, 검열, 욜랑욜랑, 금융’ 등은 ‘ㄴ’ 음을 첨가하여 발음하되, 표기대로 발음할 수 있다.",ex:"검열[검ː녈/거ː멸], 금융[금늉/그뮹]",links:[]},
+   {k:"[붙임 1]",t:"‘ㄹ’ 받침 뒤에 첨가되는 ‘ㄴ’ 음은 [ㄹ]로 발음한다.",ex:"들일[들ː릴], 솔잎[솔립], 설익다[설릭따], 물약[물략], 서울역[서울력], 휘발유[휘발류]",links:["물약","털양말","발야구","설익다"]},
+   {k:"[붙임 2]",t:"두 단어를 이어서 한 마디로 발음하는 경우에도 이에 준한다.",ex:"한 일[한닐], 옷 입다[온닙따], 할 일[할릴], 잘 입다[잘립따]",links:[]}]}
+ ]},
+ {sec:"사이시옷이 붙은 단어", types:["된소리되기","ㄴ 첨가","비음화"], arts:[
+  {no:"제30항", box:`<b>⭐ 사이시옷 발음: 원칙과 허용</b><br>ㄱ·ㄷ·ㅂ·ㅅ·ㅈ 앞의 사이시옷은 <b>뒷말을 된소리로만 내는 것이 원칙</b>, 사이시옷을 [ㄷ]으로 내는 것은 <b>허용</b>이에요. <b>둘 다 표준 발음!</b><div class="tablewrap"><table><thead><tr><th>단어</th><th>원칙</th><th>허용</th></tr></thead><tbody><tr><td>빗길</td><td><b>[비낄]</b></td><td>[빋낄]</td></tr><tr><td>바닷가</td><td><b>[바다까]</b></td><td>[바닫까]</td></tr><tr><td>냇가</td><td><b>[내ː까]</b></td><td>[낻ː까]</td></tr><tr><td>콧등</td><td><b>[코뜽]</b></td><td>[콛뜽]</td></tr></tbody></table></div><b>왜 [ㄷ] 없이가 원칙일까?</b> 사이시옷의 ㅅ은 원래 있던 소리가 아니라 <b>"뒷말이 된소리로 난다"는 표시</b>예요. 실제로 말할 때도 [ㄷ] 받침은 거의 들리지 않고 된소리만 나요.<br><b>분석할 때</b> 허용 발음 [바닫까]는 ㅅ→[ㄷ](음절의 끝소리 규칙) + ㄱ→ㄲ(된소리되기)로, 원칙 발음 [바다까]는 된소리되기(사잇소리)로 설명해요.<br><b>기출</b> 2025년 3월 고1 15번: 비 + 길 → [비낄]`, cl:[
+   {k:"1",t:"‘ㄱ, ㄷ, ㅂ, ㅅ, ㅈ’으로 시작하는 단어 앞에 사이시옷이 올 때는 이들 자음만을 된소리로 발음하는 것을 원칙으로 하되, 사이시옷을 [ㄷ]으로 발음하는 것도 허용한다.",ex:"냇가[내ː까/낻ː까], 샛길[새ː낄/샏ː낄], 콧등[코뜽/콛뜽], 깃발[기빨/긷빨], 햇살[해쌀/핻쌀]",links:["빗길","바닷가"]},
+   {k:"2",t:"사이시옷 뒤에 ‘ㄴ, ㅁ’이 결합되는 경우에는 [ㄴ]으로 발음한다.",ex:"콧날[콛날→콘날], 아랫니[아랟니→아랜니], 툇마루[퇻ː마루→퇸ː마루], 뱃머리[밷머리→밴머리]",links:["콧날","잇몸"]},
+   {k:"3",t:"사이시옷 뒤에 ‘이’ 음이 결합되는 경우에는 [ㄴㄴ]으로 발음한다.",ex:"베갯잇[베갣닏→베갠닏], 깻잎[깯닙→깬닙], 나뭇잎[나묻닙→나문닙], 뒷윷[뒫ː뉻→뒨ː뉻]",links:["뱃일"]}]}
+ ]}
+];
+const SUM = {"제8항":"받침은 ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅇ 7개만 발음해요.","제9항":"ㄲ ㅋ→[ㄱ] · ㅅ ㅆ ㅈ ㅊ ㅌ→[ㄷ] · ㅍ→[ㅂ]","제10항":"ㄳ ㄵ ㄼ ㄽ ㄾ ㅄ → 앞 자음 [ㄱ ㄴ ㄹ ㅂ] (밟-, 넓죽-은 [ㅂ])","제11항":"ㄺ ㄻ ㄿ → 뒤 자음 [ㄱ ㅁ ㅂ] (용언 ㄺ은 ㄱ 앞에서 [ㄹ])","제12항":"ㅎ+ㄱㄷㅈ→ㅋㅌㅊ · ㅎ+ㅅ→[ㅆ] · ㅎ+ㄴ→[ㄴ] · ㅎ+모음→ㅎ 없음","제13항":"홑·쌍받침 + 조사·어미의 모음 → 그대로 넘어가 발음","제14항":"겹받침 + 조사·어미의 모음 → 뒤 자음만 넘어가 발음","제15항":"받침 + 실질 형태소의 모음 → 대표음으로 바꾼 뒤 넘어가 발음","제17항":"ㄷ·ㅌ + 조사·접미사의 ㅣ → [ㅈ·ㅊ] (ㄷ+히 → [치])","제18항":"ㄱ·ㄷ·ㅂ 계열 받침 + ㄴ·ㅁ → [ㅇ·ㄴ·ㅁ]","제19항":"ㅁ·ㅇ 뒤 ㄹ → [ㄴ] (ㄱ·ㅂ 뒤 ㄹ도 [ㄴ])","제20항":"ㄴ은 ㄹ 앞뒤에서 [ㄹ] (의견란 등은 예외)","제21항":"그 밖의 자음 동화는 인정 안 해요 (감기[강기] ×)","제22항":"되어·피어는 [어] 원칙, [여]도 허용","제23항":"받침 ㄱ·ㄷ·ㅂ 뒤 ㄱㄷㅂㅅㅈ → 된소리","제24항":"어간 받침 ㄴ·ㅁ 뒤 어미 ㄱㄷㅅㅈ → 된소리 (피동·사동 -기- 제외)","제25항":"어간 받침 ㄼ·ㄾ 뒤 어미 ㄱㄷㅅㅈ → 된소리","제26항":"한자어 ㄹ 받침 뒤 ㄷㅅㅈ → 된소리","제27항":"관형사형 -(으)ㄹ 뒤 ㄱㄷㅂㅅㅈ → 된소리","제28항":"사이시옷 없는 합성어도 뒷말 첫소리가 된소리 (눈동자[눈똥자])","제29항":"합성어·파생어 뒷말 이·야·여·요·유 → ㄴ 첨가 (ㄹ 뒤면 [ㄹ])","제30항":"사이시옷: 된소리 / ㄴ·ㅁ 앞 [ㄴ] / 이 앞 [ㄴㄴ]"};
+
+/* ===== 한글 맞춤법 (음운 변동 관련) ===== */
+const SPELL = [
+ {no:"제1항",sum:"표준어를 소리대로 적되, 어법에 맞도록 적어요.",ex:"꽃이[꼬치] → '꽃이'로 적어요. 발음이 바뀌어도 형태를 밝혀 적기 때문에 대부분의 음운 변동은 표기에 반영되지 않아요.",types:[],links:[],raw:"한글 맞춤법은 표준어를 소리대로 적되, 어법에 맞도록 함을 원칙으로 한다."},
+ {no:"제5항",sum:"까닭 없는 된소리는 된소리로 적어요. 단, ㄱ·ㅂ 받침 뒤 된소리는 예사소리로 적어요.",ex:"가끔, 잔뜩, 훨씬 / 국수, 몹시, 갑자기",types:["된소리되기"],links:["국수","몹시","갑자기"],raw:"한 단어 안에서 뚜렷한 까닭 없이 나는 된소리는 다음 음절의 첫소리를 된소리로 적는다. 다만, ‘ㄱ, ㅂ’ 받침 뒤에서 나는 된소리는, 같은 음절이나 비슷한 음절이 겹쳐 나는 경우가 아니면 된소리로 적지 아니한다."},
+ {no:"제6항",sum:"ㄷ·ㅌ 받침 뒤 -이·-히가 와서 [ㅈ·ㅊ]으로 소리 나도 ㄷ·ㅌ으로 적어요.",ex:"맏이, 해돋이, 굳이, 같이, 걷히다, 닫히다, 묻히다",types:["구개음화"],links:["같이","땀받이","붙이면","붙인","닫힌","묻히다","낱낱이","덧붙이는"],raw:"‘ㄷ, ㅌ’ 받침 뒤에 종속적 관계를 가진 ‘-이(-)’나 ‘-히-’가 올 적에는, 그 ‘ㄷ, ㅌ’이 ‘ㅈ, ㅊ’으로 소리 나더라도 ‘ㄷ, ㅌ’으로 적는다."},
+ {no:"제18항",sum:"어간이나 어미가 바뀌는 용언은 바뀐 대로 적어요.",ex:"갈다→가니·갑니다·가오 (ㄹ 탈락) · 따르다→따라 (ㅡ 탈락) · 짓다→지어 (ㅅ) · 돕다→도와 (ㅂ)",types:["ㄹ 탈락","ㅡ 탈락"],links:["살+ㅂ니다","말+오","따르+아","쓰+어","담그+아","크+어서","끄+어","바쁘+아"],mid:["m-b","m-z"],raw:"다음과 같은 용언들은 어미가 바뀔 경우, 그 어간이나 어미가 원칙에 벗어나면 벗어나는 대로 적는다."},
+ {no:"제28항",sum:"끝소리 ㄹ인 말이 다른 말과 어울려 ㄹ 소리가 나지 않으면 안 나는 대로 적어요.",ex:"다달이, 따님, 마소, 바느질, 부삽, 소나무, 화살",types:["ㄹ 탈락"],links:["활+살"],mid:["m-rdrop"],raw:"끝소리가 ‘ㄹ’인 말과 딴 말이 어울릴 적에 ‘ㄹ’ 소리가 나지 아니하는 것은 아니 나는 대로 적는다."},
+ {no:"제29항",sum:"끝소리 ㄹ인 말이 다른 말과 어울려 ㄹ이 ㄷ 소리로 나면 ㄷ으로 적어요.",ex:"반짇고리, 사흗날, 섣달, 숟가락, 이튿날",types:[],links:[],mid:["m-8"],raw:"끝소리가 ‘ㄹ’인 말과 딴 말이 어울릴 적에 ‘ㄹ’ 소리가 ‘ㄷ’ 소리로 나는 것은 ‘ㄷ’으로 적는다."},
+ {no:"제30항",sum:"합성어에서 뒷말이 된소리가 되거나 ㄴ·ㄴㄴ 소리가 덧나고, 앞말이 모음으로 끝나면 사이시옷을 적어요.",ex:"빗길, 바닷가, 콧날, 잇몸, 뱃일 / 앞말이 받침으로 끝나면 X: 눈물샘",types:["된소리되기","ㄴ 첨가","비음화"],links:["빗길","바닷가","콧날","잇몸","뱃일","눈물샘"],raw:"사이시옷은 순 우리말 또는 순 우리말과 한자어로 된 합성어로서 앞말이 모음으로 끝난 경우, 뒷말의 첫소리가 된소리로 나거나, 뒷말의 첫소리 ‘ㄴ, ㅁ’ 앞에서 ‘ㄴ’ 소리가 덧나거나, 뒷말의 첫소리 모음 앞에서 ‘ㄴㄴ’ 소리가 덧나는 것 등에 받치어 적는다."},
+ {no:"제34항",sum:"ㅏ·ㅓ로 끝난 어간에 -아/-어, -았/-었이 어울려 줄면 준 대로 적어요.",ex:"가아→가, 가았다→갔다, 서었다→섰다",types:["동음 탈락"],links:["달려가+았다","가+아서","서+어","타+아라"],raw:"모음 ‘ㅏ, ㅓ’로 끝난 어간에 ‘-아/-어, -았-/-었-’이 어울릴 적에는 준 대로 적는다."},
+ {no:"제35항",sum:"ㅗ·ㅜ 뒤 -아/-어가 ㅘ·ㅝ로, ㅚ 뒤 -어가 ㅙ로 줄면 준 대로 적어요.",ex:"보아→봐, 주어→줘, 되어→돼",types:["반모음화","모음 축약"],links:[],raw:"모음 ‘ㅗ, ㅜ’로 끝난 어간에 ‘-아/-어, -았-/-었-’이 어울려 ‘ㅘ/ㅝ, ㅘㅆ/ㅝㅆ’으로 될 적에는 준 대로 적는다. [붙임 2] ‘ㅚ’ 뒤에 ‘-어, -었-’이 어울려 ‘ㅙ, ㅙㅆ’으로 될 적에도 준 대로 적는다."},
+ {no:"제36항",sum:"ㅣ 뒤 -어가 ㅕ로 줄면 준 대로 적어요.",ex:"가지어→가져, 다니어→다녀, 막히어→막혀",types:["반모음화"],links:["보이+어야","합치+어","그리+었다"],raw:"‘ㅣ’ 뒤에 ‘-어’가 와서 ‘ㅕ’로 줄 적에는 준 대로 적는다."},
+ {no:"제40항",sum:"'하'의 ㅏ가 줄고 ㅎ이 뒷소리와 거센소리가 되면 거센소리로 적어요.",ex:"간편하게→간편케, 연구하도록→연구토록, 흔하다→흔타",types:["거센소리되기"],links:[],raw:"어간의 끝음절 ‘하’의 ‘ㅏ’가 줄고 ‘ㅎ’이 다음 음절의 첫소리와 어울려 거센소리로 될 적에는 거센소리로 적는다."}
+];
+
+/* ===== 중세 국어 ===== */
+const MIDDLE = [{"id": "m-8", "t": "8종성법", "b": "15세기 받침 소리는 8개: ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㆁ. ㅅ과 ㄷ을 구별했어요.", "now": "지금은 7개(음절의 끝소리 규칙). ㅅ·ㄷ 구별이 사라져 '숟가락, 이튿날'은 ㄷ으로 적어요.", "types": ["음절의 끝소리 규칙"], "sp": ["제29항"], "src": "2017학년도 6월 모평 11~12번, 2019학년도 수능 12~13번"}, {"id": "m-b", "t": "ㅸ의 소실 → ㅂ 불규칙", "b": "돕다: <span class=\"old\">도ᄫᅡ</span> → 도와. ㅸ이 ㅏ·ㅓ 앞에서 반모음 [w]로 바뀌었어요. 받침 자리에선 ㅂ.", "now": "그래서 '돕다→도와, 굽다→구워'는 ㅂ 불규칙. '좁다→좁아'는 규칙 활용.", "types": ["반모음화"], "sp": ["제18항"], "src": "2017학년도 6월 모평 11~12번"}, {"id": "m-z", "t": "ㅿ의 소실 → ㅅ 불규칙", "b": "젓다: <span class=\"old\">저ᅀᅥ</span> → 저어. ㅿ은 16세기에 사라졌어요. 받침 자리에선 ㅅ.", "now": "그래서 '젓다→저어, 짓다→지어'는 ㅅ 불규칙. '벗다→벗어'는 규칙 활용.", "types": [], "sp": ["제18항"], "src": "2017학년도 6월 모평 11~12번"}, {"id": "m-vh", "t": "모음 조화", "b": "양성(ㅏ ㅗ ㆍ)은 양성끼리, 음성(ㅓ ㅜ ㅡ)은 음성끼리. 조사 '<span class=\"old\">ᄋᆞᆯ</span>/을', 어미 '-아/-어'를 골라 썼어요.", "now": "지금은 '잡아/먹어', '촐랑/출렁'에만 남았어요. (모음의 동화)", "types": [], "sp": [], "src": "2017년 3월 고3 학평 14~15번"}, {"id": "m-arae", "t": "ㆍ의 소실", "b": "16세기 둘째 음절 ㆍ→ㅡ (<span class=\"old\">사ᄉᆞᆷ</span>→사슴), 18세기 첫째 음절 ㆍ→ㅏ.", "now": "ㆍ가 사라지며 모음 조화가 약해졌어요.", "types": [], "sp": [], "src": "2017년 3월 고3 학평 14~15번"}, {"id": "m-yeon", "t": "이어 적기", "b": "받침을 뒤 음절로 넘겨 소리대로 적었어요: <span class=\"old\">안ᄌᆞ시니</span>(앉으시니), 머거(먹어).", "now": "지금은 형태를 밝혀 끊어 적어요(한글 맞춤법 제1항 '어법에 맞도록'). 연음은 발음에서만.", "types": [], "sp": ["제1항"], "src": "2025년 9월 고1 15번"}, {"id": "m-rdrop", "t": "합성어의 ㄹ 탈락", "b": "명사+명사 합성 때 ㄴ·ㄷ·ㅅ·ㅈ 앞 ㄹ 탈락: 솔+나모→소나모, 술+져→수져.", "now": "'소나무, 화살'은 ㄹ 탈락을 표기에 반영(한글 맞춤법 제28항). 지금은 규칙이 아니라 '솔방울'은 그대로.", "types": ["ㄹ 탈락"], "sp": ["제28항"], "src": "2019학년도 수능 12~13번"}, {"id": "m-h", "t": "ㅎ 종성 체언", "b": "끝에 ㅎ을 가진 체언: 뫼ㅎ+에→뫼헤, <span class=\"old\">하ᄂᆞᆯ</span>ㅎ+과→<span class=\"old\">하ᄂᆞᆯ</span>콰.", "now": "'살코기, 암탉, 수캐'의 거센소리에 흔적이 남았어요.", "types": ["거센소리되기"], "sp": [], "src": "2025년 9월 고1 15번"}, {"id": "m-palatal", "t": "구개음화 이전", "b": "ㄷ이 ㅣ 앞에서도 ㄷ: 펴디(→펴지). 첫머리 ㄴ도 그대로: 니르니라(→이르니라).", "now": "근대에 구개음화가 퍼졌어요. 지금은 '같이[가치]'로 발음하고 표기는 원형대로(한글 맞춤법 제6항).", "types": ["구개음화"], "sp": ["제6항"], "src": "2017년 7월 고3 학평 15번, 2025년 10월 고1 10번"}, {"id": "m-cluster", "t": "어두 자음군", "b": "단어 첫머리에 자음 2~3개: <span class=\"old\">ᄠᅱ노니</span>(뛰노니).", "now": "뒤에 된소리로 바뀌었어요. 지금은 자음 둘을 이어 발음하지 않아요(자음군 단순화).", "types": ["자음군 단순화", "된소리되기"], "sp": [], "src": "2025년 9월 고1 15번"}, {"id": "m-allo", "t": "소리에 따라 바뀐 조사·어미", "b": "주격 조사: 자음 뒤 '이', 모음 뒤 'ㅣ'(부텨+ㅣ→부톄). 객체 높임: -<span class=\"old\">ᄉᆞᆸ</span>- / -<span class=\"old\">ᄌᆞᆸ</span>- / -<span class=\"old\">ᅀᆞᆸ</span>-.", "now": "지금의 '이/가', '을/를'과 같은 원리예요.", "types": [], "sp": [], "src": "2019학년도 9월 모평 14번, 2025년 9월 고1 15번"}];
+
+/* ===== 영역 연결 문제 ===== */
+const LINKQ = [
+ {q:"'돕다→도와, 굽다→구워'(ㅂ 불규칙)와 관련 있는 중세 국어 현상은?",a:"ㅸ의 소실",o:["ㅿ의 소실","ㆍ의 소실","어두 자음군"],why:"15세기 '도ㅸ아'의 ㅸ이 반모음 [w]로 바뀌어 '도와'가 됐어요.",types:["반모음화"]},
+ {q:"'젓다→저어, 짓다→지어'(ㅅ 불규칙)와 관련 있는 중세 국어 현상은?",a:"ㅿ의 소실",o:["ㅸ의 소실","8종성법","모음 조화"],why:"'저ㅿ어'의 ㅿ이 사라져 '저어'가 됐어요.",types:[]},
+ {q:"'소나무, 화살'처럼 ㄹ을 빼고 적는 근거는?",a:"ㄹ 소리가 나지 않으면 나지 않는 대로 적는다",o:["ㄹ이 ㄷ 소리로 나면 ㄷ으로 적는다","ㄴ은 ㄹ 앞뒤에서 ㄹ로 발음한다","사이시옷을 받치어 적는다"],why:"한글 맞춤법 제28항. 중세 '솔+나모→소나모'(합성어 ㄹ 탈락)에서 왔어요.",types:["ㄹ 탈락"]},
+ {q:"'숟가락, 이튿날'의 받침이 ㄷ인 것과 관련된 규정은?",a:"ㄹ이 ㄷ 소리로 나면 ㄷ으로 적는다",o:["ㄹ 소리가 나지 않으면 나지 않는 대로 적는다","받침은 7개 소리로만 발음한다","ㄷ·ㅌ이 ㅣ 앞에서 ㅈ·ㅊ이 된다"],why:"한글 맞춤법 제29항. 받침 ㅅ과 ㄷ의 발음 구분이 사라진 국어사와 관련 있어요.",types:["음절의 끝소리 규칙"]},
+ {q:"[가치]로 발음하는 '같이'를 '같이'로 적는 까닭은?",a:"구개음화는 표기에 반영하지 않고 원형을 밝혀서",o:["ㄴ 첨가가 일어나서","구개음화가 일어나지 않아서","소리 나는 대로 적어서"],why:"한글 맞춤법 제6항: [ㅈ·ㅊ]으로 소리 나도 ㄷ·ㅌ으로 적어요.",types:["구개음화"]},
+ {q:"중세 국어 '펴디'가 오늘날 '펴지'가 된 것과 관련된 음운 변동은?",a:"구개음화",o:["비음화","된소리되기","ㄴ 첨가"],why:"중세엔 ㄷ이 ㅣ 앞에서도 ㄷ이었다가 근대에 구개음화가 일어났어요.",types:["구개음화"]},
+ {q:"'국수'를 [국쑤]로 읽지만 '국쑤'로 적지 않는 까닭은?",a:"ㄱ 받침 뒤 된소리되기는 늘 일어나서",o:["된소리되기가 일어나지 않아서","ㄴ 첨가가 일어나서","모음 사이 된소리라서"],why:"한글 맞춤법 제5항 다만. '가끔, 잔뜩'처럼 까닭 없는 된소리는 된소리로 적어요.",types:["된소리되기"]},
+ {q:"'그리+었다→그렸다'에서 일어난 음운 변동은?",a:"반모음화 (교체)",o:["반모음 첨가 (첨가)","모음 축약 (축약)","동음 탈락 (탈락)"],why:"ㅣ가 반모음 [j]로 바뀌어 음운 수 그대로. 축약으로 보는 견해도 있지만 수능 기준은 교체예요. 표기는 한글 맞춤법 제36항에 따라 준 대로.",types:["반모음화"]},
+ {q:"'살코기, 암탉'의 거센소리와 관련 있는 중세 국어 현상은?",a:"ㅎ 종성 체언",o:["어두 자음군","8종성법","이어 적기"],why:"'살ㅎ, 암ㅎ'의 ㅎ이 뒤 자음과 합쳐져 거센소리가 됐어요.",types:["거센소리되기"]},
+ {q:"'피어'를 [피여]로 읽을 때 음운 개수는?",a:"하나 늘어난다 (반모음 첨가)",o:["그대로다 (반모음화)","하나 줄어든다 (모음 축약)","하나 줄어든다 (ㅡ 탈락)"],why:"ㅣ는 그대로, [j]가 새로 생겨요. 표준 발음법 제22항의 허용 발음.",types:["반모음 첨가"]},
+ {q:"'간편하게→간편케'처럼 표기에도 반영되는 음운 변동은?",a:"거센소리되기",o:["된소리되기","비음화","구개음화"],why:"한글 맞춤법 제40항. 대부분의 거센소리되기(놓고[노코])는 표기에 반영하지 않아요.",types:["거센소리되기"]},
+ {q:"'콧날[콘날]'에서 사이시옷 자리의 [ㄷ]이 [ㄴ]이 되는 변동은?",a:"비음화",o:["유음화","ㄴ 첨가","된소리되기"],why:"표준 발음법 제30항 2: 사이시옷 뒤 ㄴ·ㅁ 앞은 [ㄴ].",types:["비음화"]},
+ {q:"음운 변동이 표기에도 반영된 것은?",a:"살+ㅂ니다 → 삽니다",o:["국물 → [궁물]","같이 → [가치]","좋은 → [조은]"],why:"ㄹ 탈락은 표기에 반영(한글 맞춤법 제18항). 나머지는 발음에서만 바뀌어요.",types:["ㄹ 탈락"]},
+ {q:"중세 국어 받침에서는 따로 발음됐지만 지금은 [ㄷ]으로 나는 소리는?",a:"ㅅ",o:["ㄷ","ㅂ","ㄹ"],why:"15세기 받침은 8개(ㄱㄴㄷㄹㅁㅂㅅㆁ). 지금은 7개라 ㅅ이 [ㄷ]이 돼요.",types:["음절의 끝소리 규칙"]},
+ {q:"'잡아 / 먹어'처럼 앞 모음에 따라 어미가 달라지는 것과 관련된 중세 국어 현상은?",a:"모음 조화",o:["ㆍ의 소실","이어 적기","8종성법"],why:"양성은 양성끼리, 음성은 음성끼리. 지금은 -아/-어와 의성어·의태어에 남았어요.",types:[]},
+ {q:"훈민정음 초성 기본자가 아닌 것은?",a:"ㅋ",o:["ㄱ","ㄴ","ㅅ"],why:"기본자 ㄱ ㄴ ㅁ ㅅ ㅇ은 발음 기관을 본뜬 상형. ㅋ은 ㄱ에 획을 더한 가획자예요.",types:[]},
+ {q:"'ㄴ → ㄷ → ㅌ'처럼 소리가 세질수록 획을 더해 글자를 만든 원리는?",a:"가획",o:["상형","이체","연서"],why:"가획: 획을 더할수록 소리가 세져요. 이체(ㆁ ㄹ ㅿ)는 이 원리와 상관없어요.",types:[]},
+ {q:"중성 기본자 ㆍ, ㅡ, ㅣ가 본뜬 것은?",a:"하늘, 땅, 사람",o:["입, 이, 목구멍","해, 달, 별","혀, 입술, 이"],why:"천지인(天地人)을 본떴어요. 이를 합성해 ㅗ ㅏ ㅜ ㅓ(초출자), ㅛ ㅑ ㅠ ㅕ(재출자)를 만들었어요.",types:[]},
+ {q:"ㅸ처럼 입술소리 아래에 ㅇ을 이어 쓰는 방법은?",a:"연서",o:["병서","부서","성음법"],why:"연서로 가벼운 입술소리를 나타냈어요. ㅸ은 뒤에 사라져 지금의 ㅂ 불규칙 활용(돕다→도와)이 생겼어요.",types:["반모음화"]},
+ {q:"훈민정음 초성 체계에서 '전탁'에 해당하는 현대 소리는?",a:"된소리",o:["거센소리","예사소리","비음"],why:"전청=예사소리, 차청=거센소리, 전탁=된소리, 불청불탁=울림소리(비음·유음).",types:["된소리되기"]},
+ {q:"받침을 따로 만들지 않고 초성 글자를 다시 쓴 원리는?",a:"종성부용초성",o:["8종성법","이어 적기","모음 조화"],why:"종성은 초성을 다시 써요. 실제 발음되는 받침은 8개(8종성법) → 지금은 7개(음절의 끝소리 규칙).",types:["음절의 끝소리 규칙"]},
+ {q:"'빗길'의 표준 발음으로 맞는 설명은?",a:"[비낄]이 원칙, [빋낄]도 허용",o:["[빋낄]만 표준 발음","[비길]이 원칙","[빗낄]이 원칙"],why:"표준 발음법 제30항 1: 사이시옷 뒤 된소리만 내는 것이 원칙, 사이시옷을 [ㄷ]으로 내는 것도 허용. 2025년 3월 고1 15번에도 [비낄].",types:["된소리되기"]},
+ {q:"사이시옷 뒤를 된소리로만 발음하는 것이 원칙인 까닭은?",a:"사이시옷은 '뒷말이 된소리'라는 표시이기 때문",o:["ㅅ이 탈락하는 규칙이 있기 때문","ㅅ이 비음이기 때문","모음 조화 때문"],why:"사이시옷의 ㅅ은 원래 있던 소리가 아니라 사잇소리(된소리)를 나타내는 표시예요. 그래서 [ㄷ]은 내지 않는 것이 원칙, 내도 허용.",types:["된소리되기"]},
+ {q:"'바닷가'의 발음에 대한 설명으로 맞는 것은?",a:"[바다까]가 원칙, [바닫까]도 허용",o:["[바닫까]만 표준 발음","[바닷까]가 원칙","[바다가]가 원칙"],why:"표준 발음법 제30항 1. 허용 발음 [바닫까]는 끝소리 규칙(ㅅ→ㄷ) + 된소리되기로 분석해요.",types:["된소리되기"]},
+ {q:"'눈물샘'에 사이시옷을 적지 않는 까닭은?",a:"앞말이 받침(ㄹ)으로 끝나서",o:["뒷말이 된소리가 되지 않아서","한자어끼리 합쳐져서","ㄴ 소리가 덧나서"],why:"사이시옷은 앞말이 모음으로 끝날 때만 적어요(한글 맞춤법 제30항). 발음은 [눈물쌤].",types:["된소리되기"]},
+ {q:"'받침은 7개 소리로만 발음한다'는 음운 변동과 관련된 표준 발음법 조항의 내용은?",a:"음절의 끝소리 규칙",o:["자음군 단순화","된소리되기","비음화"],why:"표준 발음법 제8~9항. 겹받침은 제10~11항(자음군 단순화)이에요.",types:["음절의 끝소리 규칙"]}
+];
+
+/* ===== 연결 지도 ===== */
+const CLAUSES_OF = {};
+RULES.forEach(s=>s.arts.forEach(a=>a.cl.forEach(c=>c.links.forEach(w=>{ (CLAUSES_OF[w]=CLAUSES_OF[w]||[]).push({label:(a.no+' '+c.k).trim(),art:a.no,t:c.t}); }))));
+const SPELL_OF = {};
+SPELL.forEach(s=>s.links.forEach(w=>{ (SPELL_OF[w]=SPELL_OF[w]||[]).push(s.no); }));
+const artId = no => 'art-'+no.replace(/[^0-9]/g,'');
+const spId = no => 'sp-'+no.replace(/[^0-9]/g,'');
+function rulesOfType(t){ const out=[]; RULES.forEach(s=>{ if(s.types.includes(t)) s.arts.forEach(a=>{ if(!out.includes(a.no)) out.push(a.no); }); }); return out; }
+const spellsOfType = t => SPELL.filter(s=>s.types.includes(t)).map(s=>s.no);
+const midsOfType = t => MIDDLE.filter(m=>m.types.includes(t));
+
+/* ===== 도우미 ===== */
+const $ = s => document.querySelector(s);
+const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const pick = (a,n) => shuffle(a).slice(0,n);
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ring = '<svg viewBox="0 0 80 80" aria-hidden="true"><ellipse cx="40" cy="40" rx="35" ry="33" transform="rotate(-8 40 40)"/></svg>';
+const byW = w => ITEMS.find(i=>i.w===w);
+const today = () => new Date().toISOString().slice(0,10);
+
+function sheetHTML(text, base, brackets){
+  const chars=[...text]; const bc=base?[...base]:null;
+  let h = brackets?'<span class="cell br">[</span>':'';
+  chars.forEach((c,i)=>{
+    if(c===' '){h+='<span class="cell gap"></span>';return;}
+    if(c==='+'){h+='<span class="cell br">+</span>';return;}
+    const changed = bc && bc.length===chars.length && bc[i]!==c;
+    h+=`<span class="cell${changed?' changed':''}">${esc(c)}${changed?ring:''}</span>`;
+  });
+  if(brackets) h+='<span class="cell br">]</span>';
+  return h;
+}
+function pairHTML(it, reveal){
+  const top = `<div class="sheet">${sheetHTML(it.w)}</div>`;
+  if(!reveal) return top;
+  return top+`<div class="arrow" aria-hidden="true">↓</div><div class="sheet draw">${sheetHTML(it.p, it.form?null:it.w, !it.form)}</div>`;
+}
+const shown = it => it.form ? `${it.w} → ${it.p}` : `${it.w} [${it.p}]`;
+const tchip = (t,btn) => `<${btn?'button':'span'} class="tchip k${kOf(t)}"${btn?` data-type="${esc(t)}"`:''}>${esc(t)} <small>${TYPES[t].cat}</small></${btn?'button':'span'}>`;
+const asText = a => `${a[0]}동화 · ${a[1]}동화`;
+const asOf = it => it.t.filter(t=>TYPES[t].as).join(', ');
+const stepsOf = x => x.split(/(?<=[요다]\.)\s+/).filter(Boolean);
+const spelledOut = it => !!it.form;
+
+/* ===== 화면 전환 ===== */
+function show(id){
+  if(!WHO && id!=='login' && id!=='teacher') id='login';
+  if(id==='teacher' && !teacherUnlocked){ askTeacher(); return; }
+  document.querySelectorAll('.screen').forEach(s=>s.hidden=s.id!==id);
+  const navId = (id==='result'||id==='teacher')?'home':id;
+  $('#steps').hidden = id==='play' || id==='teacher' || id==='login';
+  $('#credit').hidden = id==='play';
+  $('#printFab').hidden = id==='play' || id==='login';
+  if(id==='learn') $('#hello').innerHTML = WHO?`👋 ${esc(WHO.name)} (${esc(WHO.sid)}) <button id="helloSwitch">학생 바꾸기</button>`:'';
+  document.querySelectorAll('#steps button').forEach(b=>{ if(b.dataset.go===navId){ b.setAttribute('aria-current','step'); try{ b.scrollIntoView({block:'nearest',inline:'center'}); }catch(e){} } else b.removeAttribute('aria-current'); });
+  if(id==='home') renderHome();
+  if(id==='teacher') openTeacher();
+  if(id!=='teacher' && navId!=='teacher') teacherUnlocked = teacherUnlocked && id==='teacher';
+  window.scrollTo(0,0);
+}
+function flashTo(id, screen){
+  show(screen); const el=document.getElementById(id); if(!el) return;
+  setTimeout(()=>{ el.scrollIntoView({behavior:'smooth'}); el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'),1600); },60);
+}
+const openRule = no => { ruleMode='pron'; renderRules(); flashTo(artId(no),'rules'); };
+const openSpell = no => { ruleMode='spell'; renderRules(); flashTo(spId(no),'rules'); };
+const openMid = id => flashTo(id,'middle');
+function openType(t){ show('learn'); renderMap(t); renderHub(t); setTimeout(()=>$('#hub').scrollIntoView({behavior:'smooth'}),60); }
+function openExample(w){
+  const it=byW(w); if(!it) return;
+  exam="전체"; filter=FILTERS.find(f=>inFilter(it,f))||filter; current=it; revealed=false;
+  renderFilters(); renderWords(); renderDetail(); show('explore');
+  setTimeout(()=>$('#detail').scrollIntoView({behavior:'smooth'}),60);
+}
+document.addEventListener('click',e=>{
+  const g=e.target.closest('[data-go]'); if(g){ show(g.dataset.go); return; }
+  const m=e.target.closest('[data-mode]'); if(m){ startGame(m.dataset.mode); return; }
+  const r=e.target.closest('[data-rule]'); if(r){ openRule(r.dataset.rule); return; }
+  const s=e.target.closest('[data-spell]'); if(s){ openSpell(s.dataset.spell); return; }
+  const md=e.target.closest('[data-mid]'); if(md){ openMid(md.dataset.mid); return; }
+  const ex=e.target.closest('[data-ex]'); if(ex){ openExample(ex.dataset.ex); return; }
+  const ty=e.target.closest('[data-type]'); if(ty){ openType(ty.dataset.type); return; }
+});
+
+
+/* ===== 바탕 이론 확인하기 ===== */
+const C_POS = ["입술소리","잇몸소리","센입천장소리","여린입천장소리","목청소리"];
+const C_POS_H = ["입술","잇몸","센<br>입천장","여린<br>입천장","목청"];
+const C_ROWS = [ // [방법, 세기, 위치별 자음]
+  ["파열음","예사소리",["ㅂ","ㄷ","","ㄱ",""]],
+  ["파열음","된소리",  ["ㅃ","ㄸ","","ㄲ",""]],
+  ["파열음","거센소리",["ㅍ","ㅌ","","ㅋ",""]],
+  ["파찰음","예사소리",["","","ㅈ","",""]],
+  ["파찰음","된소리",  ["","","ㅉ","",""]],
+  ["파찰음","거센소리",["","","ㅊ","",""]],
+  ["마찰음","예사소리",["","ㅅ","","","ㅎ"]],
+  ["마찰음","된소리",  ["","ㅆ","","",""]],
+  ["비음","",          ["ㅁ","ㄴ","","ㅇ",""]],
+  ["유음","",          ["","ㄹ","","",""]]
+];
+const V_COLS = [["전설","평순"],["전설","원순"],["후설","평순"],["후설","원순"]];
+const V_ROWS = [["고모음",["ㅣ","ㅟ","ㅡ","ㅜ"]],["중모음",["ㅔ","ㅚ","ㅓ","ㅗ"]],["저모음",["ㅐ","","ㅏ",""]]];
+const C_MOVE = {
+  "음절의 끝소리 규칙":{from:"ㄲㅋㅅㅆㅈㅊㅌㅎㅍ",to:"ㄱㄴㄷㄹㅁㅂㅇ",pairs:"ㄲ·ㅋ→ㄱ ㅅ·ㅆ·ㅈ·ㅊ·ㅌ·ㅎ→ㄷ ㅍ→ㅂ",how:"받침에서는 색칠된 7칸 소리만 나요. 동그라미 친 소리는 받침에 오면 7개 중 하나로 바뀌어요."},
+  "비음화":{from:"ㄱㄷㅂ",to:"ㅇㄴㅁ",pairs:"ㅂ→ㅁ ㄷ→ㄴ ㄱ→ㅇ",how:"세로줄(자리)은 그대로, 파열음 → 비음으로 '방법'만 바뀌어요. ㄹ → ㄴ (ㄹ의 비음화)도 있어요."},
+  "유음화":{from:"ㄴ",to:"ㄹ",pairs:"ㄴ→ㄹ",how:"잇몸 자리는 그대로, 비음 → 유음으로 '방법'만 바뀌어요."},
+  "구개음화":{from:"ㄷㅌ",to:"ㅈㅊ",pairs:"ㄷ→ㅈ ㅌ→ㅊ",how:"잇몸 → 센입천장으로 '자리'가 바뀌어요. 방법도 파열음 → 파찰음."},
+  "된소리되기":{from:"ㄱㄷㅂㅅㅈ",to:"ㄲㄸㅃㅆㅉ",pairs:"ㄱ→ㄲ ㄷ→ㄸ ㅂ→ㅃ ㅅ→ㅆ ㅈ→ㅉ",how:"자리·방법은 그대로, '세기'만 예사소리 → 된소리."},
+  "거센소리되기":{from:"ㄱㄷㅂㅈㅎ",to:"ㅋㅌㅍㅊ",pairs:"ㄱ·ㄷ·ㅂ·ㅈ + ㅎ → ㅋ·ㅌ·ㅍ·ㅊ",how:"ㅎ과 예사소리, 두 음운이 거센소리 하나로 합쳐져요. 그래서 교체가 아니라 축약(음운 −1)."}
+};
+const V_MOVE = {
+  "반모음화":{from:"ㅣㅗㅜ",to:"",pairs:"ㅣ→[j] ㅗ·ㅜ→[w]",how:"단모음이 비슷한 반모음으로 바뀌어요. 그리+어→그려(ㅣ→j), 보+아→봐(ㅗ→w). 음운 수는 그대로."},
+  "모음 축약":{from:"ㅏㅣ",to:"ㅐ",pairs:"ㅏ + ㅣ → ㅐ",how:"두 단모음이 단모음 하나로 줄어요. 사이→새, 아이→애. 음운 −1."},
+  "ㅡ 탈락":{from:"ㅡ",to:"",pairs:"ㅡ → 사라짐",how:"어간의 ㅡ가 -아/-어 앞에서 사라져요. 쓰+어→써, 따르+아→따라."},
+  "동음 탈락":{from:"ㅏㅓ",to:"",pairs:"ㅏ+ㅏ, ㅓ+ㅓ → 하나만",how:"같은 모음이 겹치면 하나가 사라져요. 가+아서→가서."}
+};
+const cInfo = c => { for(const [m,s,arr] of C_ROWS){ const i=arr.indexOf(c); if(i>=0) return {pos:C_POS[i],m,s}; } };
+const vInfo = c => { for(const [h,arr] of V_ROWS){ const i=arr.indexOf(c); if(i>=0) return {h,f:V_COLS[i][0],r:V_COLS[i][1]}; } };
+let cMode=null, vMode=null, cSel=null, vSel=null;
+
+function soundCell(c, mv, sel){
+  if(!c) return '<td></td>';
+  const from = mv && mv.from.includes(c), to = mv && mv.to.includes(c);
+  const k = mv ? ` k${kOf(mv.t)}` : '';
+  return `<td><button class="cc${from?' from':''}${to?' to'+k:''}${sel===c?' sel':''}" data-cc="${c}" aria-label="${c}">${c}${from?ring:''}</button></td>`;
+}
+function consTable(plain){
+  const mv = plain?null:(cMode?{...C_MOVE[cMode],t:cMode}:null);
+  let h = `<colgroup><col class="m"><col class="s">${C_POS.map(()=>'<col>').join('')}</colgroup><thead><tr><th colspan="2">방법 \\ 위치</th>${C_POS_H.map(p=>`<th>${p}</th>`).join('')}</tr></thead><tbody>`;
+  C_ROWS.forEach(([m,s,arr],i)=>{
+    const span = C_ROWS.filter(r=>r[0]===m).length, first = i===0 || C_ROWS[i-1][0]!==m;
+    h += '<tr>' + (s ? (first?`<th rowspan="${span}">${m}</th>`:'') + `<th>${s.replace('소리','')}</th>` : `<th colspan="2">${m}</th>`)
+       + arr.map(c=> plain ? `<td>${c}</td>` : soundCell(c,mv,cSel)).join('') + '</tr>';
+  });
+  return h+'</tbody>';
+}
+function vowTable(plain){
+  const mv = plain?null:(vMode?{...V_MOVE[vMode],t:vMode}:null);
+  let h = `<colgroup><col class="m">${V_COLS.map(()=>'<col>').join('')}</colgroup><thead><tr><th rowspan="2">혀 높이</th><th colspan="2">전설 (혀 앞)</th><th colspan="2">후설 (혀 뒤)</th></tr><tr>${V_COLS.map(c=>`<th>${c[1]}</th>`).join('')}</tr></thead><tbody>`;
+  V_ROWS.forEach(([hh,arr])=>{ h+=`<tr><th>${hh.replace('모음','')}</th>`+arr.map(c=> plain ? `<td>${c}</td>` : soundCell(c,mv,vSel)).join('')+'</tr>'; });
+  return h+'</tbody>';
+}
+function modeChips(el, moves, cur, set){
+  el.innerHTML = `<button class="chip" data-m="" aria-pressed="${!cur}">자리만 보기</button>` +
+    Object.keys(moves).map(t=>`<button class="chip" data-m="${esc(t)}" aria-pressed="${cur===t}">${esc(t)}</button>`).join('');
+  el.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>set(b.dataset.m||null));
+}
+function moveCap(t, moves){
+  const mv=moves[t], k=kOf(t);
+  return `<div class="pairs2 k${k}">${esc(mv.pairs)}</div><p>${esc(mv.how)}</p><p class="small muted" style="margin-top:6px">예: ${esc(TYPES[t].ex)}</p><button class="tchip k${k}" data-type="${esc(t)}">${esc(t)} 자세히 <small>${TYPES[t].cat}</small></button>`;
+}
+function renderBasic(){
+  modeChips($('#cMode'), C_MOVE, cMode, m=>{ cMode=m; cSel=null; renderBasic(); });
+  modeChips($('#vMode'), V_MOVE, vMode, m=>{ vMode=m; vSel=null; renderBasic(); });
+  $('#cTab').innerHTML = consTable();
+  $('#vTab').innerHTML = vowTable();
+  if(cSel){ const i=cInfo(cSel); $('#cCap').innerHTML=`<p class="prof"><b>${cSel}</b>${i.pos} · ${i.m}${i.s?' · '+i.s:''}</p>`; }
+  else $('#cCap').innerHTML = cMode ? moveCap(cMode,C_MOVE) : '<p class="muted small">위의 변동 이름을 누르면, 아래 표에서 소리가 어디서 어디로 움직이는지 보여 줘요. 빨간 동그라미 = 바뀌기 전, 색칠한 칸 = 바뀐 뒤.</p>';
+  if(vSel){ const i=vInfo(vSel); $('#vCap').innerHTML=`<p class="prof"><b>${vSel}</b>${i.f} 모음 · ${i.h} · ${i.r} 모음</p>`; }
+  else $('#vCap').innerHTML = vMode ? moveCap(vMode,V_MOVE) : '<p class="muted small">모음 변동을 누르면 어떤 모음이 바뀌거나 사라지는지 보여 줘요.</p>';
+  $('#cTab').querySelectorAll('[data-cc]').forEach(b=>b.onclick=()=>{ cSel = cSel===b.dataset.cc?null:b.dataset.cc; cMode=null; renderBasic(); });
+  $('#vTab').querySelectorAll('[data-cc]').forEach(b=>b.onclick=()=>{ vSel = vSel===b.dataset.cc?null:b.dataset.cc; vMode=null; renderBasic(); });
+}
+function jamoSheet(js, ci){ return `<div class="sheet">${js.map((j,i)=>`<span class="cell${i===ci?' changed':''}">${j}${i===ci?ring:''}</span>`).join('')}</div>`; }
+const SYL = [["아","모음"],["가","자음 + 모음"],["악","모음 + 자음"],["각","자음 + 모음 + 자음"]];
+const CNT = [
+  ["국물","궁물","ㄱㅜㄱㅁㅜㄹ","ㄱㅜㅇㅁㅜㄹ","교체","0"],
+  ["좋은","조은","ㅈㅗㅎㅡㄴ","ㅈㅗㅡㄴ","탈락","−1"],
+  ["맨입","맨닙","ㅁㅐㄴㅣㅂ","ㅁㅐㄴㄴㅣㅂ","첨가","+1"],
+  ["놓고","노코","ㄴㅗㅎㄱㅗ","ㄴㅗㅋㅗ","축약","−1"]
+];
+function cntRows(){ return CNT.map(([w,p,a,b,c,d])=>`<tr><td><b>${w}</b><br>[${p}]</td><td class="jm">${a.split('').join(' ')} <span class="muted">(${[...a].length})</span><br>${b.split('').join(' ')} <span class="muted">(${[...b].length})</span></td><td class="d k${CATS[c].k}">${d}<br><span class="small">${c}</span></td></tr>`).join(''); }
+
+/* 최소 대립쌍 활동 (2019학년도 수능 11번 [A]) */
+const MP_WORDS=["쉬리","마루","구실","모래","소리","구슬","머루"];
+const MP_CHO="ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ", MP_JUNG="ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ";
+function mpJamo(w){ const out=[]; for(const ch of w){ const c=ch.charCodeAt(0)-0xAC00; out.push(MP_CHO[Math.floor(c/588)], MP_JUNG[Math.floor(c%588/28)], c%28); } return out; }
+let mpSel=[], mpFound={};
+function renderMP(){
+  const box=$('#mpWords'); if(!box) return;
+  box.innerHTML=MP_WORDS.map(w=>`<button class="word" data-mp="${w}" aria-current="${mpSel.includes(w)}">${w}</button>`).join('');
+  box.querySelectorAll('[data-mp]').forEach(b=>b.onclick=()=>{ const w=b.dataset.mp; if(mpSel.includes(w)) mpSel=mpSel.filter(x=>x!==w); else { mpSel.push(w); if(mpSel.length>2) mpSel=mpSel.slice(-2); } if(mpSel.length===2) checkMP(); renderMP(); });
+  const f=Object.values(mpFound);
+  $('#mpFound').innerHTML = f.length?`<b>찾은 쌍 ${f.length}/3</b> · ${f.map(x=>`${x.pair} → <b>${x.a}, ${x.b}</b>`).join(' · ')}${f.length===3?'<br>🎉 모두 찾았어요! 추출한 모음 ㅟ ㅗ ㅏ ㅓ ㅣ ㅡ = 전설 2개(ㅣ ㅟ) · 중모음 2개(ㅓ ㅗ) · 고모음 3개(ㅣ ㅟ ㅡ) · 후설 4개(ㅡ ㅓ ㅏ ㅗ) · 평순 4개(ㅣ ㅡ ㅓ ㅏ). 아래 모음 표에서 확인해 보세요.':''}`:'';
+}
+function checkMP(){
+  const [x,y]=mpSel, a=mpJamo(x), b=mpJamo(y);
+  let diff=[]; if(a.length===b.length) a.forEach((v,i)=>{ if(v!==b[i]) diff.push([v,b[i]]); }); else diff=[[0,0],[0,0]];
+  const r=$('#mpResult');
+  if(diff.length===1){ const [p,q]=diff[0]; mpFound[[x,y].sort().join('-')]={pair:`${x}–${y}`,a:p,b:q}; r.innerHTML=`⭕ <b>${x} – ${y}</b>: 최소 대립쌍! <b>${p}</b>와 <b>${q}</b> 하나 차이로 뜻이 달라져요 → 둘 다 음운.`; try{ SFX.correct(0); }catch(e){} }
+  else r.innerHTML=`❌ <b>${x} – ${y}</b>: 다른 소리가 ${diff.length}개라서 최소 대립쌍이 아니에요.`;
+  mpSel=[];
+}
+/* ===== 음운론 기초 문제 ===== */
+const BASICQ = [
+ {q:"'살'과 '쌀'처럼 하나의 소리 차이로 뜻이 갈리는 단어 쌍은?",a:"최소 대립쌍",o:["동음이의어","유의 관계","상하 관계"],why:"최소 대립쌍에서 차이 나는 소리(ㅅ, ㅆ)가 음운이에요. (2019학년도 수능 11번)"},
+ {q:"최소 대립쌍이 아닌 것은?",a:"마루 – 모래",o:["마루 – 머루","구실 – 구슬","소리 – 쉬리"],why:"마루–모래는 ㅏ/ㅗ, ㅜ/ㅐ 두 곳이 달라요. 최소 대립쌍은 딱 한 곳만 달라야 해요."},
+ {q:"'쉬리 – 소리'에서 추출되는 음운은?",a:"ㅟ, ㅗ",o:["ㅅ, ㄹ","ㅣ, ㅡ","ㅏ, ㅓ"],why:"쉬리와 소리는 ㅟ/ㅗ만 달라요. (2019학년도 수능 11번)"},
+ {q:"'구실 – 구슬'에서 추출된 ㅣ, ㅡ의 공통점은?",a:"고모음이다",o:["원순 모음이다","저모음이다","후설 모음이다"],why:"ㅣ(전설·평순·고), ㅡ(후설·평순·고) → 둘 다 고모음, 평순 모음이에요."},
+ {q:"소리의 길이처럼 뜻을 구별하지만 따로 떼어 낼 수 없는 음운은?",a:"운소 (비분절 음운)",o:["음소 (분절 음운)","음절","형태소"],why:"현대 국어의 운소는 소리의 길이예요. 눈(目) / 눈ː(雪)"},
+ {q:"기출 발음 '담기[담ː끼]'의 ː가 나타내는 것은?",a:"소리의 길이 (운소)",o:["된소리","거센소리","받침의 탈락"],why:"ː는 긴소리 표시예요. 소리의 길이는 비분절 음운(운소)이에요. (2018년 3월 고3)"},
+ {q:"자음과 모음처럼 하나하나 나눌 수 있는 음운은?",a:"음소 (분절 음운)",o:["운소 (비분절 음운)","억양","음절"],why:"분절 음운 = 음소: 자음 19개, 모음 21개."},
+ {q:"비음화(국물→[궁물])에서 ㄱ이 ㅇ으로 바뀔 때 바뀐 것은?",a:"조음 방법 (파열음 → 비음)",o:["조음 위치 (여린입천장 → 입술)","소리의 세기 (예사 → 된)","혀의 높낮이"],why:"ㄱ과 ㅇ은 둘 다 여린입천장소리. 자리는 그대로, 내는 방법만 비음으로 바뀌어요."},
+ {q:"구개음화(같이→[가치])에서 바뀐 것은?",a:"조음 위치 (잇몸 → 센입천장)",o:["조음 방법 (파열음 → 비음)","음운의 개수","모음의 입술 모양"],why:"잇몸소리 ㅌ이 ㅣ의 영향으로 센입천장소리 ㅊ이 돼요."},
+ {q:"다음 중 장애음이 아닌 것은?",a:"ㄴ",o:["ㄱ","ㅅ","ㅈ"],why:"장애음 = 파열음·마찰음·파찰음. ㄴ은 비음(공명음)이에요. (2018년 3월 고3 지문)"},
+ {q:"음절 끝(종성)에서 발음될 수 있는 자음은 몇 개?",a:"7개",o:["8개","5개","19개"],why:"ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅇ. 중세 국어는 8개(ㅅ 포함)였어요."},
+ {q:"'값도[갑또]'에서 ㅅ이 탈락한 까닭은?",a:"음절 끝에 자음이 하나만 올 수 있어서",o:["모음 앞이라서","ㅅ이 비음이라서","된소리가 되어서"],why:"음절 구조의 제약 → 자음군 단순화. (2017학년도 6월 모평 13번)"},
+ {q:"이중 모음 'ㅑ'를 이루는 것은?",a:"반모음 [j] + ㅏ",o:["ㅣ + ㅏ (단모음 둘)","반모음 [w] + ㅏ","ㅏ + 받침"],why:"이중 모음 = 반모음 + 단모음. 그래서 반모음화·반모음 첨가가 생겨요."},
+ {q:"원순 모음끼리 묶인 것은?",a:"ㅗ, ㅜ, ㅚ, ㅟ",o:["ㅏ, ㅓ, ㅡ, ㅣ","ㅐ, ㅔ, ㅚ, ㅟ","ㅗ, ㅏ, ㅓ, ㅜ"],why:"입술을 둥글게 오므리는 모음: ㅗ ㅜ ㅚ ㅟ."},
+ {q:"여린입천장소리끼리 묶인 것은?",a:"ㄱ, ㄲ, ㅋ, ㅇ",o:["ㄷ, ㄸ, ㅌ, ㄴ","ㅂ, ㅃ, ㅍ, ㅁ","ㅈ, ㅉ, ㅊ, ㅎ"],why:"혀 뒷부분이 여린입천장에 닿는 소리: ㄱ ㄲ ㅋ ㅇ."},
+ {q:"ㅈ, ㅉ, ㅊ의 조음 방법은?",a:"파찰음",o:["파열음","마찰음","비음"],why:"막았다가 마찰시키며 내는 파찰음. 자리는 센입천장이에요."},
+ {q:"비음끼리 묶인 것은?",a:"ㅁ, ㄴ, ㅇ",o:["ㅁ, ㄴ, ㄹ","ㄱ, ㄷ, ㅂ","ㅅ, ㅆ, ㅎ"],why:"코로 소리를 내보내는 비음: ㅁ ㄴ ㅇ. ㄹ은 유음이에요."},
+ {q:"입술소리가 아닌 것은?",a:"ㄷ",o:["ㅁ","ㅂ","ㅍ"],why:"입술소리: ㅂ ㅃ ㅍ ㅁ. ㄷ은 잇몸소리예요."},
+ {q:"후설 모음이 아닌 것은?",a:"ㅚ",o:["ㅡ","ㅓ","ㅜ"],why:"ㅚ는 전설·원순·중모음. 후설 모음: ㅡ ㅓ ㅏ ㅜ ㅗ."},
+ {q:"혀의 높이가 가장 낮은 저모음끼리 묶인 것은?",a:"ㅐ, ㅏ",o:["ㅣ, ㅡ","ㅔ, ㅓ","ㅚ, ㅗ"],why:"단모음 체계에서 저모음은 ㅐ(전설)와 ㅏ(후설) 두 개."},
+ {q:"중세 국어에서 방점으로 표시한 운소는?",a:"소리의 높낮이 (성조)",o:["소리의 길이","소리의 세기","모음 조화"],why:"중세 국어는 성조가 있었고 글자 왼쪽 점(방점)으로 나타냈어요."}
+];
+
+
+/* ===== 체계표 외워서 채우기 ===== */
+const FILL={C:{ans:[],sel:null},V:{ans:[],sel:null}};
+function fillTableHTML(k){
+  const F=FILL[k]; F.ans=[]; let h='';
+  const inp=(c,label)=>{ const i=F.ans.push(c)-1; return `<td><input class="fi" data-k="${k}" data-i="${i}" maxlength="2" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="${label}"></td>`; };
+  if(k==='C'){
+    h=`<thead><tr><th colspan="2">방법 \\ 위치</th>${C_POS_H.map(p=>`<th>${p}</th>`).join('')}</tr></thead><tbody>`;
+    C_ROWS.forEach(([m,s,arr],r)=>{ const span=C_ROWS.filter(x=>x[0]===m).length, first=r===0||C_ROWS[r-1][0]!==m;
+      h+='<tr>'+(s?(first?`<th rowspan="${span}">${m}</th>`:'')+`<th>${s.replace('소리','')}</th>`:`<th colspan="2">${m}</th>`)+
+        arr.map((c,i)=>c?inp(c,`${C_POS[i]} ${m} ${s}`):'<td class="na"></td>').join('')+'</tr>'; });
+  } else {
+    h=`<thead><tr><th rowspan="2">혀 높이</th><th colspan="2">전설 (혀 앞)</th><th colspan="2">후설 (혀 뒤)</th></tr><tr>${V_COLS.map(c=>`<th>${c[1]}</th>`).join('')}</tr></thead><tbody>`;
+    V_ROWS.forEach(([hh,arr])=>{ h+=`<tr><th>${hh.replace('모음','')}</th>`+arr.map((c,i)=>c?inp(c,`${hh} ${V_COLS[i].join(' ')}`):'<td class="na"></td>').join('')+'</tr>'; });
+  }
+  return h+'</tbody>';
+}
+function fillReset(k){
+  $('#fill'+k+'Tab').innerHTML=fillTableHTML(k);
+  const pad=[...new Set(FILL[k].ans)]; for(let i=pad.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pad[i],pad[j]]=[pad[j],pad[i]];}
+  $('#fill'+k+'Pad').innerHTML=pad.map(c=>`<button class="kp" data-kp="${c}" data-k="${k}">${c}</button>`).join('')+`<button class="kp del" data-kp="" data-k="${k}" aria-label="지우기">⌫</button>`;
+  $('#fill'+k+'Msg').textContent=''; $('#fill'+k+'Score').textContent=`0 / ${FILL[k].ans.length}`;
+  FILL[k].sel=null;
+  const box=$('#fill'+k+'Tab');
+  box.querySelectorAll('.fi').forEach(inp=>{
+    inp.addEventListener('focus',()=>{ FILL[k].sel=inp; box.querySelectorAll('.fi.cur').forEach(x=>x.classList.remove('cur')); inp.classList.add('cur'); });
+    inp.addEventListener('input',()=>{ const m=(inp.value.match(/[ㄱ-ㅣ]/g)||[]); inp.value=m.length?m[m.length-1]:''; inp.classList.remove('ok','bad','shown'); fillCount(k); if(inp.value) fillNext(k,inp); });
+  });
+}
+function fillNext(k,from){ const all=[...$('#fill'+k+'Tab').querySelectorAll('.fi')]; const i=all.indexOf(from); const nx=all.slice(i+1).concat(all.slice(0,i)).find(x=>!x.value); if(nx){ nx.focus({preventScroll:true}); } }
+function fillCount(k){ const all=[...$('#fill'+k+'Tab').querySelectorAll('.fi')]; $('#fill'+k+'Score').textContent=`${all.filter(x=>x.value).length} / ${all.length} 채움`; }
+function fillCheck(k){
+  const all=[...$('#fill'+k+'Tab').querySelectorAll('.fi')]; let ok=0;
+  all.forEach(x=>{ const a=FILL[k].ans[+x.dataset.i]; x.classList.remove('ok','bad','shown'); if(x.value===a){ x.classList.add('ok'); ok++; } else x.classList.add('bad'); });
+  const n=all.length, full=all.every(x=>x.value);
+  $('#fill'+k+'Score').textContent=`${ok} / ${n} 정답`;
+  if(ok===n){ $('#fill'+k+'Msg').innerHTML='🎉 <b>완벽해요!</b> 체계표를 다 외웠어요.'; try{ SFX.fanfare(); confetti(); }catch(e){} }
+  else { $('#fill'+k+'Msg').innerHTML=`빨간 칸 ${n-ok}개를 다시 생각해 보세요. ${full?'':'(빈칸도 틀린 것으로 셌어요)'} 막히면 '정답 보기'.`; try{ SFX.finish(); }catch(e){} }
+  if(full) bumpStat('음운론 기초', ok===n);
+}
+function fillShow(k){ $('#fill'+k+'Tab').querySelectorAll('.fi').forEach(x=>{ const a=FILL[k].ans[+x.dataset.i]; if(x.value!==a){ x.value=a; x.classList.remove('bad'); x.classList.add('shown'); } }); $('#fill'+k+'Msg').textContent='회색 글자가 정답이에요. 눈으로 익힌 뒤 "다시"를 눌러 한 번 더!'; }
+function bumpStat(c,ok){ const s=P.stats[c]||{c:0,w:0,box:0,last:''}; if(ok){ s.c++; s.box=Math.min(4,s.box+1); } else { s.w++; s.box=0; } s.last=today(); P.stats[c]=s; saveLocal(); }
+document.addEventListener('click',e=>{
+  const kp=e.target.closest('[data-kp]'); if(kp){ const k=kp.dataset.k, inp=FILL[k].sel||$('#fill'+k+'Tab .fi'); if(!inp) return; inp.value=kp.dataset.kp; inp.classList.remove('ok','bad','shown'); fillCount(k); if(kp.dataset.kp) fillNext(k,inp); else inp.focus({preventScroll:true}); return; }
+  const fb=e.target.closest('[data-fill]'); if(fb){ const [k,a]=fb.dataset.fill.split(':'); if(a==='check') fillCheck(k); else if(a==='reset') fillReset(k); else fillShow(k); }
+});
+
+function renderBasicStatic(){
+  renderMP(); fillReset('C'); fillReset('V');
+  const PR = [[["ㅂ","ㅜ","ㄹ"],0,"불","🔥"],[["ㅍ","ㅜ","ㄹ"],0,"풀","🌿"],[["ㅃ","ㅜ","ㄹ"],0,"뿔","🦌"],[["ㄷ","ㅏ","ㄹ"],1,"달","🌕"],[["ㄷ","ㅗ","ㄹ"],1,"돌","🪨"]];
+  const prH = a => `<div class="pairs">${a.map(([js,ci,w,e])=>`<div class="pr">${jamoSheet(js,ci)}<p>${w} <small>${e}</small></p></div>`).join('')}</div>`;
+  $('#minPairs').innerHTML = prH(PR.slice(0,3)) + prH(PR.slice(3));
+  $('#sylBox').innerHTML = SYL.map(([w,s])=>`<div><div class="sheet">${sheetHTML(w)}</div><b>${s}</b></div>`).join('');
+  $('#cntTab').innerHTML = `<thead><tr><th>단어</th><th>음운 (개수)</th><th>변화</th></tr></thead><tbody>${cntRows()}</tbody>`;
+}
+
+/* ===== 개념 지도 ===== */
+function renderCats(){
+  $('#cats').innerHTML = Object.entries(CATS).map(([c,v])=>`<div class="cat4 k${v.k}"><b>${c}</b><code>${v.f}</code><span>${v.d}<br>${v.n}</span></div>`).join('');
+}
+let hubType=null;
+function renderMap(sel){
+  hubType = sel===undefined?hubType:sel;
+  $('#map').innerHTML = Object.keys(CATS).map(c=>`<div class="mcol"><h3 class="k${CATS[c].k}">${c}</h3>`+
+    typeNames.filter(t=>TYPES[t].cat===c).map(t=>`<button class="tile k${kOf(t)}" data-tile="${esc(t)}" aria-pressed="${t===hubType}">${esc(t)}<i>${TYPES[t].snd}${TYPES[t].as?' · 동화':''}${TYPES[t].sp?' · 표기O':''}</i></button>`).join('')+`</div>`).join('');
+  $('#map').querySelectorAll('[data-tile]').forEach(b=>b.onclick=()=>{ const t=b.dataset.tile; renderMap(hubType===t?null:t); renderHub(hubType); if(hubType) setTimeout(()=>$('#hub').scrollIntoView({behavior:'smooth'}),30); });
+}
+function renderHub(t){
+  if(!t){ $('#hub').innerHTML=''; return; }
+  const T=TYPES[t], k=kOf(t);
+  const exs = shuffle(ITEMS.filter(i=>i.t.includes(t))).sort((a,b)=>a.t.length-b.t.length).slice(0,6);
+  const rs=rulesOfType(t), ss=spellsOfType(t), ms=midsOfType(t);
+  $('#hub').innerHTML = `<div class="hub k${k}">
+    <h2>${esc(t)}</h2>
+    <div class="badges"><span class="tag k${k}">${T.cat} · ${CATS[T.cat].n}</span><span class="tag">${T.snd} 변동</span>${T.as?'<span class="tag k2">동화</span>':''}<span class="tag ${T.sp?'k3':'k2'}">${T.sp?'표기에 반영 O':'발음에서만'}</span></div>
+    <div class="formula">${esc(T.f)}</div>
+    <p class="one">${esc(T.def)}</p>
+    ${T.note?`<p class="note"><b>수능 기준</b> ${esc(T.note)}</p>`:''}
+    ${T.as?`<p class="small muted">${ASSIM_EX[t]||''}</p>`:''}
+    <div class="lrow"><b>예시</b>${exs.length?exs.map(i=>`<button class="link" data-ex="${esc(i.w)}">${esc(shown(i))}</button>`).join(''):`<span class="small muted">${esc(T.ex)}</span>`}</div>
+    <div class="lrow"><b>표준 발음법</b>${rs.length?rs.map(n=>`<button class="link" data-rule="${n}">${n}</button>`).join(''):'<span class="small muted">관련 조항 없음 (표기 문제 → 한글 맞춤법)</span>'}</div>
+    <div class="lrow"><b>한글 맞춤법</b>${ss.length?ss.map(n=>`<button class="link sp" data-spell="${n}">${n}</button>`).join(''):'<span class="small muted">표기에 반영 안 함 (제1항: 형태를 밝혀 적기)</span>'}</div>
+    <div class="lrow"><b>중세 국어</b>${ms.length?ms.map(m=>`<button class="link" data-mid="${m.id}">${m.t.replace(/<[^>]+>/g,'')}</button>`).join(''):'<span class="small muted">—</span>'}</div>
+  </div>`;
+}
+
+/* ===== 예시 탐구 ===== */
+const FILTERS = ["교체","탈락","첨가","축약","동화"];
+const EXAMS = ["전체","3월","6월","9월","10월","기출","교과서"];
+let filter="교체", exam="전체", current=null, revealed=false;
+function inFilter(it,f){ if(exam!=="전체" && !it.src.startsWith(exam)) return false; return f==="동화" ? !!it.a : it.t.some(t=>TYPES[t].cat===f); }
+function renderFilters(){
+  $('#examFilters').innerHTML = EXAMS.map(x=>`<button class="chip" aria-pressed="${x===exam}" data-x="${x}">${x==='전체'?'전체':x==='기출'?'고3·수능 기출':x==='교과서'?'교과서 예':'2025 '+x}</button>`).join('');
+  $('#examFilters').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ exam=b.dataset.x; current=null; if(!ITEMS.some(i=>inFilter(i,filter))) filter=FILTERS.find(f=>ITEMS.some(i=>inFilter(i,f)))||filter; renderFilters(); renderWords(); renderDetail(); });
+  $('#filters').innerHTML = FILTERS.map(f=>`<button class="chip" aria-pressed="${f===filter}" data-f="${f}">${f}</button>`).join('');
+  $('#filters').querySelectorAll('.chip').forEach(b=>b.onclick=()=>{ filter=b.dataset.f; current=null; renderFilters(); renderWords(); renderDetail(); });
+}
+function renderWords(){
+  const list = ITEMS.filter(i=>inFilter(i,filter));
+  if(!list.length){ $('#words').innerHTML='<p class="muted">이 시험지에는 해당 예시가 없어요.</p>'; current=null; return; }
+  if(!current || !list.includes(current)){ current=list[0]; revealed=false; }
+  $('#words').innerHTML = list.map(i=>`<button class="word" data-w="${esc(i.w)}" aria-current="${current===i}">${esc(i.w)}</button>`).join('');
+  $('#words').querySelectorAll('.word').forEach(b=>b.onclick=()=>{ current=byW(b.dataset.w); revealed=false; renderWords(); renderDetail(); });
+}
+function renderDetail(){
+  const it=current; if(!it){ $('#detail').innerHTML=''; return; }
+  const list = ITEMS.filter(i=>inFilter(i,filter)); const k=list.indexOf(it);
+  let h = `<div class="detail">${pairHTML(it, revealed)}`;
+  if(!revealed){
+    h += `<p class="muted" style="text-align:center">${it.form?'합치면 어떻게 될까요?':'소리 내어 읽어 보세요. 어디가 바뀔까요?'}</p><div class="row" style="justify-content:center"><button class="btn" id="revealBtn">확인!</button></div>`;
+  } else {
+    h += `<div style="margin-top:12px">${it.t.map(t=>tchip(t,true)).join('')}</div>`;
+    h += `<div class="badges">${it.a?`<span class="tag k2">${asText(it.a)}${it.t.length>1?' ('+asOf(it)+')':''}</span>`:''}<span class="tag ${spelledOut(it)?'k3':'k2'}">${spelledOut(it)?'표기에 반영 O':'발음에서만'}</span></div>`;
+    h += `<ul class="steps-list">${stepsOf(it.x).map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`;
+    const cl=CLAUSES_OF[it.w]||[], sp=SPELL_OF[it.w]||[];
+    if(cl.length||sp.length) h += `<div class="lrow"><b>규정</b>${cl.map(c=>`<button class="link" data-rule="${c.art}">표준 발음법 ${esc(c.label)}</button>`).join('')}${sp.map(n=>`<button class="link sp" data-spell="${n}">한글 맞춤법 ${n}</button>`).join('')}</div>`;
+    h += `<p class="hint">출처: ${esc(it.src)}</p>`;
+    if(k<list.length-1) h += `<div class="row"><button class="btn" id="nextEx">다음 예시 →</button></div>`;
+  }
+  $('#detail').innerHTML=h+'</div>';
+  const rb=$('#revealBtn'); if(rb) rb.onclick=()=>{ revealed=true; renderDetail(); };
+  const nb=$('#nextEx'); if(nb) nb.onclick=()=>{ current=list[k+1]; revealed=false; renderWords(); renderDetail(); };
+}
+
+/* ===== 표준 발음법·한글 맞춤법 ===== */
+let ruleMode='pron';
+function renderRules(){
+  $('#ruleMode').innerHTML = [['pron','📏 표준 발음법 (읽기)'],['spell','✏️ 한글 맞춤법 (쓰기)']].map(([m,l])=>`<button class="chip" aria-pressed="${m===ruleMode}" data-rm="${m}">${l}</button>`).join('');
+  $('#ruleMode').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{ ruleMode=b.dataset.rm; renderRules(); });
+  const wordLinks = ws => { ws=ws.filter(w=>byW(w)); return ws.length?`<div class="lrow"><b>예시</b>${ws.map(w=>`<button class="link" data-ex="${esc(w)}">${esc(w)}</button>`).join('')}</div>`:''; };
+  const typeLinks = ts => ts.length?`<div style="margin-top:6px">${ts.map(t=>tchip(t,true)).join('')}</div>`:'';
+  if(ruleMode==='pron'){
+    $('#ruleJump').innerHTML = RULES.map((s,i)=>`<button class="chip" data-sec="${i}">${s.sec}</button>`).join('');
+    $('#ruleJump').querySelectorAll('[data-sec]').forEach(b=>b.onclick=()=>document.getElementById('rsec-'+b.dataset.sec).scrollIntoView({behavior:'smooth'}));
+    $('#rulesBody').innerHTML = RULES.map((s,i)=>`<div class="rsec" id="rsec-${i}"><h2>${s.sec}</h2>${typeLinks(s.types)}${s.note?`<p class="note">${s.note}</p>`:''}`+
+      s.arts.map(a=>`<div class="art" id="${artId(a.no)}"><span class="no">${a.no}</span><div class="sum">${esc(SUM[a.no]||'')}</div>`+
+        a.cl.map(c=>`${c.ex?`<div class="exs">${c.k?`<b>${c.k}</b> `:''}예: ${c.ex}</div>`:''}${wordLinks(c.links)}`).join('')+
+        (a.note?`<p class="note">${a.note}</p>`:'')+(a.box?`<div class="ex-box">${a.box}</div>`:'')+
+        `<details><summary>원문 보기</summary>${a.cl.map(c=>`<p>${c.k?`<b>${c.k}</b> `:''}${c.t}</p>`).join('')}</details></div>`).join('')+`</div>`).join('');
+  } else {
+    $('#ruleJump').innerHTML='';
+    $('#rulesBody').innerHTML = SPELL.map(s=>`<div class="art" id="${spId(s.no)}"><span class="no">${s.no}</span><div class="sum">${esc(s.sum)}</div><div class="exs">예: ${esc(s.ex)}</div>${typeLinks(s.types)}${wordLinks(s.links)}${(s.mid||[]).length?`<div class="lrow"><b>중세 국어</b>${s.mid.map(id=>{const m=MIDDLE.find(x=>x.id===id);return `<button class="link" data-mid="${id}">${m.t.replace(/<[^>]+>/g,'')}</button>`;}).join('')}</div>`:''}<details><summary>원문 보기</summary><p>${esc(s.raw)}</p></details></div>`).join('');
+  }
+}
+
+/* ===== 중세 국어 ===== */
+function renderMiddle(){
+  $('#middleBody').innerHTML = MIDDLE.map(m=>`<div class="mcard" id="${m.id}"><h3>${m.t}</h3><p>${m.b}</p><div class="now"><b>지금은?</b> ${m.now}</div>`+
+    ((m.types.length||m.sp.length)?`<div class="lrow"><b>연결</b>${m.types.map(t=>tchip(t,true)).join('')}${m.sp.map(n=>`<button class="link sp" data-spell="${n}">한글 맞춤법 ${n}</button>`).join('')}</div>`:'')+
+    `<p class="hint">기출: ${m.src}</p></div>`).join('');
+}
+
+/* ===== 마인드맵 ===== */
+let mmMode='f';
+const MM_W=1100, MM_H=650;
+function compressNos(nos){ const n=[...new Set(nos.map(s=>parseInt(s.replace(/[^0-9]/g,''))))].sort((a,b)=>a-b); const out=[]; for(let i=0;i<n.length;i++){ let j=i; while(j+1<n.length&&n[j+1]===n[j]+1) j++; out.push(j-i>=2?`${n[i]}~${n[j]}`:(j>i?`${n[i]}·${n[j]}`:`${n[i]}`)); i=j; } return out.join('·'); }
+function mmLine(t){
+  const T=TYPES[t];
+  if(mmMode==='ex') return T.ex.split(' · ').slice(0,2).join(' · ');
+  if(mmMode==='rule'){ const r=rulesOfType(t), s=spellsOfType(t); return `${r.length?'발음법 '+compressNos(r)+'항':'발음법 —'} · ${s.length?'맞춤법 '+compressNos(s)+'항':'맞춤법 —'}`; }
+  return T.f;
+}
+function mindmapSVG(clickable){
+  const col=k=>`var(--c${k})`;
+  const C={x:550,y:360};
+  const cats={"교체":{x:400,y:205,side:-1},"탈락":{x:700,y:190,side:1},"첨가":{x:400,y:520,side:-1},"축약":{x:700,y:520,side:1}};
+  const leafY={"교체":22,"탈락":38,"첨가":468,"축약":468};
+  let s=`<svg viewBox="0 0 ${MM_W} ${MM_H}" class="mm" role="img" aria-label="음운의 변동 마인드맵" font-family="IBM Plex Sans KR, Apple SD Gothic Neo, Malgun Gothic, sans-serif">`;
+  let links='', nodes='';
+  Object.entries(cats).forEach(([c,p])=>{
+    const k=CATS[c].k;
+    links+=`<path d="M${C.x} ${C.y} C ${(C.x+p.x)/2} ${C.y}, ${(C.x+p.x)/2} ${p.y}, ${p.x} ${p.y}" stroke="${col(k)}" stroke-width="5" fill="none" opacity=".55"/>`;
+    const ts=typeNames.filter(t=>TYPES[t].cat===c);
+    ts.forEach((t,i)=>{
+      const y=leafY[c]+i*64, h=52, w=246, x=p.side<0?20:MM_W-20-w, ex=p.side<0?x+w:x, ey=y+h/2;
+      links+=`<path d="M${p.x+p.side*82} ${p.y} C ${(p.x+ex)/2} ${p.y}, ${(p.x+ex)/2} ${ey}, ${ex} ${ey}" stroke="${col(k)}" stroke-width="2.5" fill="none" opacity=".7"/>`;
+      const T=TYPES[t];
+      const badges=(T.as?'◆동화 ':'')+(T.sp?'✓표기O':'');
+      nodes+=`<g ${clickable?`class="mmleaf" data-type="${esc(t)}" tabindex="0"`:''}><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="var(--surface)" stroke="${col(k)}" stroke-width="2.5"/>
+        <text x="${x+12}" y="${y+21}" font-size="16" font-weight="700" fill="${col(k)}">${esc(t)}</text>
+        <text x="${x+w-10}" y="${y+20}" font-size="11.5" font-weight="700" fill="var(--mark)" text-anchor="end">${badges}</text>
+        <text x="${x+12}" y="${y+42}" font-size="12.5" fill="var(--ink)">${esc(mmLine(t))}</text></g>`;
+    });
+    nodes+=`<g><rect x="${p.x-82}" y="${p.y-36}" width="164" height="72" fill="${col(k)}"/>
+      <text x="${p.x}" y="${p.y-6}" font-size="24" font-weight="700" fill="#fff" text-anchor="middle">${c}</text>
+      <text x="${p.x}" y="${p.y+20}" font-size="13" fill="#fff" text-anchor="middle">${CATS[c].f} · ${CATS[c].n}</text></g>`;
+  });
+  nodes+=`<g><ellipse cx="${C.x}" cy="${C.y}" rx="112" ry="52" fill="var(--ink)"/>
+    <text x="${C.x}" y="${C.y-4}" font-size="24" font-weight="700" fill="var(--paper)" text-anchor="middle">음운의 변동</text>
+    <text x="${C.x}" y="${C.y+22}" font-size="13" fill="var(--paper)" text-anchor="middle">소리가 바뀌는 원리</text></g>
+    <text x="${MM_W/2}" y="${MM_H-36}" font-size="13.5" font-weight="700" fill="var(--grid)" text-anchor="middle">① 소리 = 음운 변동 → ② 읽기 = 표준 발음법 → ③ 쓰기 = 한글 맞춤법 → ④ 뿌리 = 중세 국어</text>
+    <text x="${MM_W/2}" y="${MM_H-12}" font-size="13" fill="var(--muted)" text-anchor="middle">◆동화: 비음화·유음화·구개음화 (순행·역행·상호 / 완전·불완전)   ✓표기O: 바뀐 대로 적음   음운 수: 교체 0 · 탈락 −1 · 첨가 +1 · 축약 −1</text>`;
+  return s+links+nodes+'</svg>';
+}
+/* 음운의 개념 마인드맵 (바탕 이론) */
+let mmKind='change';
+const BMAP = {
+  center:["음운","뜻을 구별하는 가장 작은 소리 단위"],
+  branches:[
+    {name:"분절 음운 = 음소", x:390, y:200, side:-1, y0:20, sec:"자음", leaves:[
+      ["자음 19개","조음 위치 5 · 조음 방법 5 · 세기 3","자음"],
+      ["조음 위치","입술 · 잇몸 · 센입천장 · 여린입천장 · 목청","자음"],
+      ["조음 방법","파열·파찰·마찰(장애음) / 비음·유음(공명음)","자음"],
+      ["모음 21개","단모음 10 + 이중 모음 11","모음"],
+      ["단모음 10","혀의 앞뒤 · 혀의 높이 · 입술 모양","모음"],
+      ["이중 모음 11","반모음 [j]·[w]·[ɰ] + 단모음","모음"]]},
+    {name:"비분절 음운 = 운소", x:710, y:150, side:1, y0:56, leaves:[
+      ["소리의 길이","눈(目) / 눈ː(雪) · 기출 표기의 ː","음운이란"],
+      ["억양","밥 먹어. ↘ / 밥 먹어? ↗","음운이란"],
+      ["중세 국어의 성조","소리의 높낮이 · 방점으로 표시","음운이란"]]},
+    {name:"최소 대립쌍", x:390, y:530, side:-1, y0:468, leaves:[
+      ["뜻","하나의 소리 차이로 뜻이 갈리는 쌍 (살/쌀)","최소 대립쌍"],
+      ["기출 2019 수능","쉬리–소리 · 마루–머루 · 구실–구슬","최소 대립쌍"]]},
+    {name:"음절 구조", x:710, y:470, side:1, y0:396, leaves:[
+      ["4가지 유형","아 · 가 · 악 · 각","음절"],
+      ["받침 자리 약속","자음 1개만 · ㄱㄴㄷㄹㅁㅂㅇ 7개만","음절"],
+      ["→ 음운 변동으로","음절의 끝소리 규칙 · 자음군 단순화","@음절의 끝소리 규칙"]]}
+  ]
+};
+function basicMapSVG(clickable){
+  const C={x:550,y:340}, G='var(--grid)';
+  let links='', nodes='';
+  BMAP.branches.forEach(b=>{
+    links+=`<path d="M${C.x} ${C.y} C ${(C.x+b.x)/2} ${C.y}, ${(C.x+b.x)/2} ${b.y}, ${b.x} ${b.y}" stroke="${G}" stroke-width="5" fill="none" opacity=".55"/>`;
+    b.leaves.forEach(([t,sub,go],i)=>{
+      const y=b.y0+i*64, h=52, w=262, x=b.side<0?20:MM_W-20-w, ex=b.side<0?x+w:x, ey=y+h/2;
+      links+=`<path d="M${b.x+b.side*92} ${b.y} C ${(b.x+ex)/2} ${b.y}, ${(b.x+ex)/2} ${ey}, ${ex} ${ey}" stroke="${G}" stroke-width="2.5" fill="none" opacity=".7"/>`;
+      const attr = !clickable?'' : go.startsWith('@') ? `class="mmleaf" data-type="${esc(go.slice(1))}" tabindex="0"` : `class="mmleaf" data-bsec="${esc(go)}" tabindex="0"`;
+      const isExam = t.startsWith('기출');
+      nodes+=`<g ${attr}><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="var(--surface)" stroke="${isExam?'var(--mark)':G}" stroke-width="2.5"/>
+        <text x="${x+12}" y="${y+21}" font-size="16" font-weight="700" fill="${isExam?'var(--mark)':'var(--ink)'}">${esc(t)}</text>
+        <text x="${x+12}" y="${y+42}" font-size="12.5" fill="var(--ink)">${esc(sub)}</text></g>`;
+    });
+    nodes+=`<g><rect x="${b.x-92}" y="${b.y-30}" width="184" height="60" fill="${G}"/>
+      <text x="${b.x}" y="${b.y+6}" font-size="18" font-weight="700" fill="#fff" text-anchor="middle">${esc(b.name)}</text></g>`;
+  });
+  nodes+=`<g><ellipse cx="${C.x}" cy="${C.y}" rx="120" ry="54" fill="var(--ink)"/>
+    <text x="${C.x}" y="${C.y-4}" font-size="28" font-weight="700" fill="var(--paper)" text-anchor="middle">${BMAP.center[0]}</text>
+    <text x="${C.x}" y="${C.y+22}" font-size="12.5" fill="var(--paper)" text-anchor="middle">${BMAP.center[1]}</text></g>
+    <text x="${MM_W/2}" y="${MM_H-14}" font-size="13.5" font-weight="700" fill="var(--grid)" text-anchor="middle">음운을 알면 → 어떤 소리가 어떤 소리로 바뀌는지(음운 변동)가 보여요</text>`;
+  return `<svg viewBox="0 0 ${MM_W} ${MM_H}" class="mm" role="img" aria-label="음운의 개념 마인드맵" font-family="IBM Plex Sans KR, Apple SD Gothic Neo, Malgun Gothic, sans-serif">`+links+nodes+'</svg>';
+}
+function openBasicSec(key){
+  show('basic');
+  const h2=[...document.querySelectorAll('#basic h2')].find(x=>x.textContent.includes(key));
+  if(h2) setTimeout(()=>h2.scrollIntoView({behavior:'smooth'}),60);
+}
+document.addEventListener('click',e=>{ const pl=e.target.closest('[data-pl]'); if(pl){ const el=document.getElementById(pl.dataset.pl); if(el) el.scrollIntoView({behavior:'smooth'}); } });
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-bsec]'); if(b) openBasicSec(b.dataset.bsec); const hm=e.target.closest('[data-hm]'); if(hm){ const el=document.getElementById(hm.dataset.hm); if(el) el.scrollIntoView({behavior:'smooth'}); } });
+
+function renderMindmap(){
+  $('#mmKind').innerHTML=[['change','🔤 음운 변동'],['basic','📚 음운의 개념 (바탕 이론)']].map(([k,l])=>`<button class="chip" aria-pressed="${k===mmKind}" data-mk="${k}">${l}</button>`).join('');
+  $('#mmKind').querySelectorAll('[data-mk]').forEach(b=>b.onclick=()=>{ mmKind=b.dataset.mk; renderMindmap(); });
+  $('#mmLead').textContent = mmKind==='basic' ? '음운이 무엇이고 어떻게 나뉘는지 한 장으로. 칸을 누르면 바탕 이론 확인하기의 해당 부분으로 가요.' : '음운의 변동 전체를 한 장으로. 보기 방식을 바꿔 가며 세 번 훑어보세요.';
+  $('#mmMode').innerHTML=(mmKind==='change'?[['f','공식'],['ex','예시'],['rule','관련 조항']].map(([m,l])=>`<button class="chip" aria-pressed="${m===mmMode}" data-mm="${m}">${l}</button>`).join(''):'')+`<button class="chip" id="mmPrint">🖨 이 마인드맵 인쇄</button>`;
+  $('#mmMode').querySelectorAll('[data-mm]').forEach(b=>b.onclick=()=>{ mmMode=b.dataset.mm; renderMindmap(); });
+  $('#mmPrint').onclick=()=>doPrint('mindmap');
+  $('#mindmap').innerHTML= mmKind==='basic' ? basicMapSVG(true) : mindmapSVG(true);
+  $('#mindmap').querySelectorAll('.mmleaf').forEach(g=>g.addEventListener('keydown',e=>{ if(e.key==='Enter'){ g.dataset.bsec?openBasicSec(g.dataset.bsec):openType(g.dataset.type); } }));
+}
+
+/* ===== 파일 저장 ===== */
+function saveFile(name,data,type){ const b=new Blob([data],{type}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },1500); }
+
+/* ===== 인쇄 ===== */
+const PRINT_CSS = `
+:root{--paper:#fff;--ink:#1D2321;--muted:#5D6862;--grid:#3B8A68;--grid-soft:#D5E7DD;--mark:#D9412E;--surface:#fff;--c1:#2563C9;--c2:#D9412E;--c3:#1F8A5B;--c4:#8A4FD0}
+@page{size:A4;margin:14mm}
+*{box-sizing:border-box}
+body{font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#1D2321;font-size:11.5pt;line-height:1.55;margin:0}
+h1{font-size:22pt;margin:0 0 4pt} h2{font-size:15pt;margin:14pt 0 6pt;border-bottom:2px solid #3B8A68;padding-bottom:3pt} h3{font-size:12.5pt;margin:10pt 0 4pt}
+.sub{color:#2563C9;font-weight:700} .muted{color:#5D6862} .small{font-size:9.5pt}
+table{border-collapse:collapse;width:100%;margin:6pt 0} th,td{border:1px solid #3B8A68;padding:4pt 5pt;text-align:left;vertical-align:top;font-size:9.5pt} th{background:#E8F2EC}
+.k1{color:#2563C9} .k2{color:#D9412E} .k3{color:#1F8A5B} .k4{color:#8A4FD0}
+.box{border:1.5px solid #3B8A68;padding:7pt 9pt;margin:6pt 0;page-break-inside:avoid}
+.why{border:1.5px solid #2563C9;background:#EEF3FC}
+.art{border-left:3px solid #3B8A68;padding:2pt 0 2pt 8pt;margin:6pt 0;page-break-inside:avoid}
+.raw{color:#5D6862;font-size:9.5pt}
+.old{font-family:"Noto Sans KR","Malgun Gothic",sans-serif;font-weight:700}
+.mm{width:100%;height:auto}
+.pb{page-break-before:always}
+.ctab th,.ctab td{text-align:center;font-size:10.5pt}
+.credit{margin-top:16pt;text-align:center;color:#5D6862;font-size:9pt}
+tr{page-break-inside:avoid}
+`;
+function printDoc(scope){
+  const types=typeNames.map(t=>{ const T=TYPES[t], k=kOf(t);
+    const r=rulesOfType(t), s=spellsOfType(t);
+    return `<tr><td class="k${k}" style="width:16%"><b>${esc(t)}</b><br><span class="small">${T.cat}${T.as?' · ◆동화':''}</span></td><td style="width:17%">${esc(T.f)}</td><td>${esc(T.def)}${T.note?`<br><span class="small k1">수능 기준: ${esc(T.note)}</span>`:''}<br><span class="small muted">예: ${esc(T.ex)}</span></td><td style="width:6%;text-align:center">${T.sp?'O':'X'}</td><td style="width:17%" class="small">발음법 ${r.length?compressNos(r)+'항':'—'}<br>맞춤법 ${s.length?compressNos(s)+'항':'—'}</td><td style="width:13%" class="small">${midsOfType(t).map(m=>m.t.replace(/<[^>]+>/g,'')).join(', ')||'—'}</td></tr>`; }).join('');
+  const mmPrev=mmMode; mmMode='f'; const mm=mindmapSVG(false); mmMode=mmPrev; const bmm=basicMapSVG(false);
+  const head=`<h1><span class="sub">재이미나는</span> 음운 변동 마스터 챌린지</h1><p class="muted">음운 변동 · 표준 발음법 · 한글 맞춤법 · 중세 국어 통합 정리</p>`;
+  const mmSec=`<h2>마인드맵 ① 음운의 개념 (바탕 이론)</h2>${bmm}<h2 class="pb">마인드맵 ② 음운 변동</h2>${mm}`;
+  if(scope==='mindmap') return wrapPrint(head+(mmKind==='basic'?`<h2>음운의 개념 마인드맵</h2>${bmm}`:`<h2>음운 변동 마인드맵</h2>${mindmapSVG(false)}`), 'landscape');
+  const why=`<h2>왜 함께 공부할까?</h2>
+   <div class="box why"><b>① 소리(음운 변동) → ② 읽기(표준 발음법) → ③ 쓰기(한글 맞춤법) → ④ 뿌리(중세 국어)</b><br>국물 → 비음화 → [궁물]로 읽고(표준 발음법 제18항) → '국물'로 써요(한글 맞춤법 제1항).</div>
+   ${[...document.querySelectorAll('#rules .why, #middle .why')].map(d=>`<div class="box why">${d.innerHTML}</div>`).join('')}`;
+  const basic=`<h2 class="pb">바탕 이론 확인하기</h2>
+   <p><b>음운</b>: 말의 뜻을 구별해 주는 소리의 가장 작은 단위. 불/풀/뿔, 달/돌. 분절 음운(자음 19 + 모음 21)과 비분절 음운(소리의 길이: 눈[눈ː]/눈).</p>
+   <p><b>음소</b>(분절 음운) / <b>운소</b>(비분절 음운: 소리의 길이 — 기출 표기의 ː, 중세 국어는 성조). <b>최소 대립쌍</b>: 하나의 소리로 뜻이 갈리는 쌍(살/쌀). 2019학년도 수능 11번: 쉬리–소리(ㅟ/ㅗ), 마루–머루(ㅏ/ㅓ), 구실–구슬(ㅣ/ㅡ).</p>\n   <h3>자음 체계</h3><table class="ctab">${consTable(true)}</table>
+   <p class="small muted">파열음·파찰음·마찰음 = 장애음 / 비음·유음 = 공명음(울림소리)</p>
+   <h3>단모음 체계</h3><table class="ctab">${vowTable(true)}</table>
+   <p class="small">이중 모음 11개 = [j]+단모음(ㅑㅕㅛㅠㅒㅖ), [w]+단모음(ㅘㅝㅙㅞ), [ɰ]+ㅣ(ㅢ). ㅚ·ㅟ는 이중 모음 발음도 허용.</p>
+   <h3>음절의 구조와 음운 개수</h3><p class="small">모음(아) · 자음+모음(가) · 모음+자음(악) · 자음+모음+자음(각). 받침에는 자음 하나, ㄱㄴㄷㄹㅁㅂㅇ 7개만. 초성 ㅇ은 음운으로 세지 않음.</p>
+   <table><thead><tr><th>단어 → 발음</th><th>음운 (개수)</th><th>변화</th></tr></thead><tbody>${cntRows()}</tbody></table>`;
+  const concept=`<h2 class="pb">음운 변동 15가지 정리</h2>
+   <table><thead><tr><th>변동</th><th>공식</th><th>설명 · 예</th><th>표기</th><th>관련 규정</th><th>중세 국어</th></tr></thead><tbody>${types}</tbody></table>
+   <h3>동화 한눈에</h3>${document.querySelector('#learn .tablewrap').innerHTML}
+   <h3>헷갈림 주의</h3>${[...document.querySelectorAll('#learn .mini > div')].map(m=>`<div class="box">${m.innerHTML}</div>`).join('')}
+   ${(()=>{ const p=[...document.querySelectorAll('#learn .panel')].find(x=>x.textContent.includes('보이어')); return p?`<div class="box">${p.innerHTML}</div>`:''; })()}`;
+  const pron=`<h2 class="pb">표준 발음법 (읽기)</h2>`+RULES.map(s=>`<h3>${s.sec}</h3>`+s.arts.map(a=>`<div class="art"><b>${a.no}</b> ${esc(SUM[a.no]||'')}<div class="raw">${a.cl.map(c=>`${c.k?`<b>${c.k}</b> `:''}${c.t}${c.ex?` <i>예: ${c.ex}</i>`:''}`).join('<br>')}</div>${a.box?`<div class="box">${a.box}</div>`:''}</div>`).join('')).join('');
+  const spell=`<h2 class="pb">한글 맞춤법 (쓰기)</h2>`+SPELL.map(s=>`<div class="art"><b>${s.no}</b> ${esc(s.sum)}<div class="raw">예: ${esc(s.ex)}<br>원문: ${esc(s.raw)}</div></div>`).join('');
+  const hmc=document.getElementById('hunmin').cloneNode(true); hmc.querySelectorAll('button').forEach(x=>x.replaceWith(document.createTextNode(x.textContent)));
+  const mid=`<h2 class="pb">훈민정음 (창제 · 제자 원리 · 체계표 · 운용법)</h2>${hmc.innerHTML.replace(/<h2 /g,'<h3 ').replace(/<\/h2>/g,'</h3>')}<h2 class="pb">중세 국어의 음운 (뿌리)</h2>`+MIDDLE.map(m=>`<div class="art"><b>${m.t}</b><br>${m.b}<br><span class="k1">지금은?</span> ${m.now}<div class="raw">기출: ${m.src}</div></div>`).join('');
+  const exList=`<h2 class="pb">기출·교과서 예시 모음</h2>`+Object.keys(CATS).map(c=>`<h3 class="k${CATS[c].k}">${c}</h3><table><thead><tr><th>단어</th><th>발음·결과</th><th>변동</th><th>출처</th></tr></thead><tbody>`+
+    ITEMS.filter(i=>TYPES[i.t[0]].cat===c).map(i=>`<tr><td><b>${esc(i.w)}</b></td><td>${i.form?esc(i.p):'['+esc(i.p)+']'}</td><td>${esc(i.t.join(', '))}</td><td class="small">${esc(i.src)}</td></tr>`).join('')+`</tbody></table>`).join('');
+  const plc=document.getElementById('plusBody').cloneNode(true); plc.querySelectorAll('button').forEach(x=>x.replaceWith(document.createTextNode(x.textContent)));
+  const plus=`<h2 class="pb">플러스 학습 (수능·모평 빈출)</h2>${plc.innerHTML.replace(/<h2 /g,'<h3 ').replace(/<\/h2>/g,'</h3>')}`;
+  return wrapPrint(head+mmSec+why+basic+concept+pron+spell+mid+plus+exList,'portrait');
+}
+function wrapPrint(body, orient){
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>음운 변동 마스터 챌린지 학습 자료</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+<style>${PRINT_CSS}${orient==='landscape'?'@page{size:A4 landscape;margin:10mm}':''}</style></head><body>${body}<p class="credit">제작 JJI · 2026.10.08. 시험기간</p></body></html>`;
+}
+function doPrint(scope){
+  closePrintMenu();
+  if(scope==='screen'){
+    document.querySelectorAll('details').forEach(d=>{ d.dataset.wasOpen=d.open?'1':''; d.open=true; });
+    document.body.classList.add('print-screen');
+    try{ window.print(); }catch(e){}
+    setTimeout(()=>{ document.body.classList.remove('print-screen'); document.querySelectorAll('details').forEach(d=>{ d.open=d.dataset.wasOpen==='1'; }); },500);
+    return;
+  }
+  const html=printDoc(scope);
+  const area=$('#printArea'); const doc=new DOMParser().parseFromString(html,'text/html');
+  area.innerHTML=`<style>${PRINT_CSS.replace(/@page\{[^}]*\}/g,'').replace(':root{','#printArea{')}</style>`+doc.body.innerHTML;
+  document.body.classList.add('print-doc'); if(scope==='mindmap') document.body.classList.add('print-land');
+  try{ window.print(); }catch(e){}
+  setTimeout(()=>{ document.body.classList.remove('print-doc','print-land'); area.innerHTML=''; },500);
+}
+async function downloadPrint(scope){
+  closePrintMenu();
+  const html=printDoc(scope).replace('</body>','<script>window.addEventListener("load",()=>setTimeout(()=>window.print(),600));<\/script></body>');
+  saveFile(`음운변동_${scope==='mindmap'?'마인드맵':'전체학습자료'}_인쇄용.html`, html, 'text/html;charset=utf-8');
+}
+function openPrintMenu(){ $('#printMenu').hidden=false; setTimeout(()=>$('#printMenu button').focus(),30); }
+function closePrintMenu(){ $('#printMenu').hidden=true; }
+$('#printFab').onclick=openPrintMenu;
+$('#printMenu').addEventListener('click',e=>{ const b=e.target.closest('[data-print]'); if(b){ const [kind,scope]=b.dataset.print.split(':'); kind==='dl'?downloadPrint(scope):doPrint(scope); } else if(e.target.id==='printMenu'||e.target.id==='pmClose') closePrintMenu(); });
+
+/* ===== 플러스 학습 문제 ===== */
+const PLUSQ = [
+ {q:"'꽂힌[꼬친]'에서 일어난 음운 변동은?",a:"거센소리되기",o:["음절의 끝소리 규칙","구개음화","된소리되기"],why:"ㅈ과 ㅎ이 바로 ㅊ으로 합쳐져요. 축약이 먼저라 끝소리 규칙은 일어나지 않아요. (2017학년도 수능 12번)"},
+ {q:"'닫히다[다치다]'의 변동 순서로 맞는 것은?",a:"거센소리되기 → 구개음화",o:["구개음화 → 거센소리되기","음절의 끝소리 규칙 → 비음화","된소리되기 → 구개음화"],why:"ㄷ+ㅎ → ㅌ(축약), ㅌ이 ㅣ 앞에서 ㅊ(교체)."},
+ {q:"'(신을) 신고'만 [신ː꼬]로 발음되는 까닭은?",a:"용언 어간과 어미라는 형태소 조건 때문",o:["ㄴ 뒤에서는 언제나 된소리가 나서","한자어라서","사이시옷이 있어서"],why:"명사 '신고(申告)'는 [신고]. 형태소 조건이 필요한 된소리되기예요. (2018년 3월 고3)"},
+ {q:"연음에 대한 설명으로 맞는 것은?",a:"음운이 바뀌지 않아 음운 변동이 아니다",o:["교체의 한 종류다","탈락의 한 종류다","첨가의 한 종류다"],why:"받침이 자리만 옮겨요. 실질 형태소 앞에서는 끝소리 규칙이 먼저 일어나요."},
+ {q:"'겉옷'을 [거돋]으로 발음하는 까닭은?",a:"'옷'이 실질 형태소라 대표음으로 바꾼 뒤 연음해서",o:["'옷'이 조사라서 그대로 연음해서","구개음화가 일어나서","ㄴ 첨가가 일어나서"],why:"표준 발음법 제15항. 조사 앞이면 그대로 연음(겉이[거치])."},
+ {q:"'닭을'의 표준 발음은?",a:"[달글]",o:["[다글]","[닥글]","[달을]"],why:"겹받침 + 모음 조사 → 뒤 자음만 연음 (표준 발음법 제14항)."},
+ {q:"'가져'의 표준 발음은?",a:"[가저]",o:["[가져]","[가즈어]","[갇져]"],why:"용언 활용형의 '져, 쪄, 쳐'는 [저, 쩌, 처] (표준 발음법 제5항 다만 1)."},
+ {q:"'희망'의 표준 발음은?",a:"[히망]",o:["[희망]","[흐망]","[해망]"],why:"자음을 첫소리로 가진 'ㅢ'는 [ㅣ] (표준 발음법 제5항 다만 3)."},
+ {q:"긴소리에 대한 설명으로 맞는 것은?",a:"원칙적으로 단어의 첫음절에서만 난다",o:["모든 음절에서 난다","끝음절에서만 난다","표기에 반드시 나타낸다"],why:"눈보라[눈ː보라] ↔ 첫눈[천눈] (표준 발음법 제6항)."},
+ {q:"표준 발음으로 인정되지 않는 것은?",a:"감기[강기]",o:["신라[실라]","국물[궁물]","같이[가치]"],why:"조음 위치 동화는 인정하지 않아요 (표준 발음법 제21항)."},
+ {q:"'녀자'를 '여자'로 적는 규칙은?",a:"두음 법칙",o:["구개음화","모음 조화","유음화"],why:"한글 맞춤법 제10항. 중세 국어에는 두음 법칙이 없었어요(니르니라)."},
+ {q:"'흙하고[흐카고]'에서 음운 개수의 변화는?",a:"두 개 줄었다",o:["한 개 줄었다","그대로다","한 개 늘었다"],why:"자음군 단순화(탈락 −1) + 거센소리되기(축약 −1). (2018학년도 6월 모평 13번)"},
+ {q:"'맡는[만는]'에서 일어난 교체의 횟수는?",a:"2번",o:["1번","3번","0번"],why:"ㅌ → ㄷ(끝소리 규칙), ㄷ → ㄴ(비음화). 음운 개수는 그대로."},
+ {q:"모음 앞에서 앞 자음이 아니라 뒤 자음이 남는 겹받침끼리 묶인 것은?",a:"ㄺ, ㄻ, ㄿ",o:["ㄳ, ㄵ, ㅄ","ㄼ, ㄽ, ㄾ","ㄶ, ㅀ, ㄵ"],why:"자음 앞·끝에서 ㄺ→[ㄱ], ㄻ→[ㅁ], ㄿ→[ㅂ]처럼 뒤 자음이 남아요 (표준 발음법 제11항)."}
+];
+
+/* ===== 학습 기록 (반복 복습) ===== */
+const OLDKEY='eumun-progress-v2';
+let WHO=null;
+let P = {stats:{}, missed:[], days:[], plays:0, answered:0, correctTotal:0, points:0, studySec:0, gameSec:0, best:0, sid:'', name:''};
+const P0 = () => ({stats:{}, missed:[], days:[], plays:0, answered:0, correctTotal:0, points:0, studySec:0, gameSec:0, best:0, sid:'', name:''});
+function fnvW(s){ let h=0x811c9dc5; for(const ch of s){ h^=ch.charCodeAt(0); h=Math.imul(h,0x01000193)>>>0; } return h>>>0; }
+const whoKey = w => w.sid.replace(/[^0-9A-Za-z]/g,'') + '-' + fnvW(w.name).toString(36);
+function loadLocal(){ P=P0(); if(!WHO) return; try{ const s=localStorage.getItem('eumun-p:'+whoKey(WHO)); if(s) P=Object.assign(P,JSON.parse(s)); }catch(e){} P.sid=WHO.sid; P.name=WHO.name; }
+function saveLocal(){ if(!WHO) return; try{ localStorage.setItem('eumun-p:'+whoKey(WHO), JSON.stringify(P)); }catch(e){} }
+const conceptList = () => [...typeNames, ...SKILLS];
+function level(c){ const s=P.stats[c]; if(!s) return 0; return s.box; }
+function record(tags, ok, ref){
+  tags.forEach(c=>{ const s=P.stats[c]||{c:0,w:0,box:0,last:''}; if(ok){s.c++; s.box=Math.min(4,s.box+1);} else {s.w++; s.box=0;} s.last=today(); P.stats[c]=s; });
+  const key=JSON.stringify(ref);
+  P.missed = P.missed.filter(m=>JSON.stringify(m)!==key);
+  if(!ok) P.missed.unshift(ref);
+  P.missed = P.missed.slice(0,40);
+  P.answered++; if(ok) P.correctTotal++;
+}
+function streak(){ const d=[...new Set(P.days)].sort().reverse(); let n=0; let cur=new Date(today()); for(const x of d){ if(x===cur.toISOString().slice(0,10)){ n++; cur.setDate(cur.getDate()-1); } else break; } return n; }
+function masteryHTML(){
+  return conceptList().map(c=>{ const s=P.stats[c]; const l=level(c); const weak=s && s.box===0 && s.w>0;
+    return `<div class="mt l${l}${weak?' weak':''}">${esc(c)}<div class="bar"><i></i><i></i><i></i><i></i></div></div>`; }).join('');
+}
+function renderHome(){
+  const mastered=conceptList().filter(c=>level(c)>=3).length;
+  $('#stats').innerHTML = `<div class="stat"><b>${P.points}</b><span>누적 포인트</span></div><div class="stat"><b>${fmtTime(P.studySec)}</b><span>학습 시간</span></div><div class="stat"><b>${streak()}</b><span>연속 학습일</span></div><div class="stat"><b>${P.answered}</b><span>푼 문제</span></div><div class="stat"><b>${P.answered?Math.round(100*P.correctTotal/P.answered):0}%</b><span>정답률</span></div><div class="stat"><b>${mastered}/${conceptList().length}</b><span>마스터 개념</span></div>`;
+  $('#whoName').textContent = WHO?`👤 ${WHO.name} (${WHO.sid})`:'';
+  $('#mgrid').innerHTML = masteryHTML();
+  $('#pickTypes').innerHTML = typeNames.map(t=>{ const s=P.stats[t]; const weak=s&&s.box===0&&s.w>0; return `<button class="tchip k${kOf(t)}" data-pick="${esc(t)}">${weak?'❗':''}${esc(t)}</button>`; }).join('');
+  $('#pickTypes').querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>startGame('practice',b.dataset.pick));
+}
+
+/* ===== 문제 만들기 ===== */
+const pronItems = () => ITEMS.filter(i=>!i.form && !i.noPron);
+const COMBOS = c => ["교체","탈락","첨가","축약"].filter(x=>c.includes(x)).join(' + ');
+const comboOf = it => COMBOS([...new Set(it.t.map(t=>TYPES[t].cat))]);
+const ALL_COMBOS = [...new Set(ITEMS.map(comboOf))];
+const DELTA = {"교체":0,"탈락":-1,"첨가":1,"축약":-1};
+const COUNT_LABEL = {"1":"하나 늘어남","0":"그대로","-1":"하나 줄어듦","-2":"둘 줄어듦"};
+const countOf = it => it.t.reduce((s,t)=>s+DELTA[TYPES[t].cat],0);
+const countOK = it => { if(it.w==='긁적긁적') return false; const ds=it.t.map(t=>DELTA[TYPES[t].cat]); return !(ds.includes(1)&&ds.includes(-1)) || ['흙일','삯일'].includes(it.w); };
+const SPELL_SKIP = ["빗길","콧날","잇몸","뱃일","바닷가","피었다","눈물샘"];
+
+const G = {
+  type(it){ const ans=pick(it.t,1)[0];
+    return {tag:"변동 이름", tags:[...it.t], ref:{g:'type',w:it.w}, it, reveal:1, text: it.t.length>1?"일어난 음운 변동으로 맞는 것은?":"일어난 음운 변동은?",
+      opts:shuffle([ans,...pick(typeNames.filter(t=>!it.t.includes(t)),3)]), ans, why:it.x}; },
+  pron(it){ const ans=`[${it.p}]`;
+    return {tag:"표준 발음", tags:[...it.t], ref:{g:'pron',w:it.w}, it, text:"표준 발음은?", opts:shuffle([ans,...it.n.map(n=>`[${n}]`)]), ans, why:it.x}; },
+  find(t){ const yes=ITEMS.filter(i=>i.t.includes(t)); if(!yes.length) return null; const it=pick(yes,1)[0];
+    return {tag:"예시 찾기", tags:[t], ref:{g:'find',t}, it, text:`'${t}'이(가) 일어나는 것은?`, opts:shuffle([shown(it),...pick(ITEMS.filter(i=>!i.t.includes(t)),3).map(shown)]), ans:shown(it), why:it.x, noStage:1}; },
+  cat(t){ return {tag:"유형 분류", tags:[t], ref:{g:'cat',t}, text:`'${t}'은(는) 어떤 유형?`, opts:["교체","탈락","첨가","축약"], ans:TYPES[t].cat, why:`${t}: ${TYPES[t].f} → ${TYPES[t].cat} (${CATS[TYPES[t].cat].n})`}; },
+  def(t){ const its=ITEMS.filter(i=>i.t.includes(t)); const single=its.filter(i=>i.t.length===1); const pool=single.length?single:its;
+    if(pool.length){ const it=pool[Math.floor(Math.random()*pool.length)];
+      return {tag:"예시 보고 맞히기", tags:[t], ref:{g:'def',t}, it, reveal:1, text:"어떤 음운 변동이 일어났을까?", opts:shuffle([t,...pick(typeNames.filter(x=>!it.t.includes(x)),3)]), ans:t, why:it.x}; }
+    return {tag:"개념", tags:[t], ref:{g:'def',t}, text:"이 설명에 맞는 변동은?", box:`${TYPES[t].f}<br><span class="small muted">${TYPES[t].def}</span>`, opts:shuffle([t,...pick(typeNames.filter(x=>x!==t),3)]), ans:t, why:`예: ${TYPES[t].ex}`}; },
+  assim(it){ const ans=asText(it.a); const all=[]; ["순행","역행","상호"].forEach(d=>["완전","불완전"].forEach(g=>{ if(!(d==="상호"&&g==="완전")) all.push(asText([d,g])); }));
+    return {tag:"동화", tags:["동화 방향·정도"], ref:{g:'assim',w:it.w}, it, reveal:1, text: it.t.length>1?`${asOf(it)}의 방향과 정도는?`:"동화의 방향과 정도는?", opts:shuffle([ans,...pick(all.filter(x=>x!==ans),3)]), ans, why:it.x}; },
+  combo(it){ const ans=comboOf(it);
+    return {tag:"유형 조합", tags:["유형 조합",...it.t], ref:{g:'combo',w:it.w}, it, reveal:1, text:"일어난 변동 유형을 모두 고르면?", opts:shuffle([ans,...pick(ALL_COMBOS.filter(x=>x!==ans),3)]), ans, why:`${it.t.map(t=>`${t}(${TYPES[t].cat})`).join(', ')}`}; },
+  count(it){ const n=countOf(it); const ans=COUNT_LABEL[String(n)];
+    return {tag:"음운 개수", tags:["음운 개수",...it.t], ref:{g:'count',w:it.w}, it, reveal:1, text:"음운 개수는 어떻게 될까?", opts:["하나 늘어남","그대로","하나 줄어듦","둘 줄어듦"], ans, why:`${it.t.map(t=>`${t} ${CATS[TYPES[t].cat].n}`).join(' / ')}`}; },
+  spell(it){ const o=spelledOut(it); const ans=o?"O 표기에도 반영":"X 발음에서만";
+    return {tag:"표기 반영", tags:["표기 반영",...it.t], ref:{g:'spell',w:it.w}, it, reveal:1, text:"이 음운 변동, 표기에도 반영될까?", opts:["O 표기에도 반영","X 발음에서만"], ans, why: o?`${it.t.join(', ')}은(는) 표기에 반영돼요.`:`형태를 밝혀 적어요(한글 맞춤법 제1항). 바뀌는 건 발음뿐!`}; },
+  plus(i){ const B=PLUSQ[i];
+    return {tag:"플러스 학습", tags:["플러스 학습"], ref:{g:'plus',i}, text:B.q, opts:shuffle([B.a,...B.o]), ans:B.a, why:B.why}; },
+  basic(i){ const B=BASICQ[i];
+    return {tag:"음운론 기초", tags:["음운론 기초"], ref:{g:'basic',i}, text:B.q, opts:shuffle([B.a,...B.o]), ans:B.a, why:B.why}; },
+  link(i){ const L=LINKQ[i];
+    return {tag:"영역 연결", tags:["영역 연결",...L.types], ref:{g:'link',i}, text:L.q, opts:shuffle([L.a,...L.o]), ans:L.a, why:L.why}; }
+};
+function regen(ref){
+  const it = ref.w ? byW(ref.w) : null;
+  if(ref.w && !it) return null;
+  if(ref.g==='link') return LINKQ[ref.i]?G.link(ref.i):null;
+  if(ref.g==='basic') return BASICQ[ref.i]?G.basic(ref.i):null;
+  if(ref.g==='plus') return PLUSQ[ref.i]?G.plus(ref.i):null;
+  if(ref.t) return G[ref.g](ref.t);
+  if(ref.g==='pron' && (it.form||it.noPron)) return G.type(it);
+  return G[ref.g](it);
+}
+const rnd = arr => arr[Math.floor(Math.random()*arr.length)];
+function fresh(kind, used){
+  const ok = i => !used.has(i.w);
+  let pool;
+  switch(kind){
+    case 'type': pool=ITEMS.filter(ok); break;
+    case 'pron': pool=pronItems().filter(ok); break;
+    case 'assim': pool=ITEMS.filter(i=>i.a&&ok(i)); break;
+    case 'combo': pool=ITEMS.filter(i=>i.t.length>1&&ok(i)); break;
+    case 'count': pool=ITEMS.filter(i=>countOK(i)&&ok(i)); break;
+    case 'spell': { const o=Math.random()<.5; pool=ITEMS.filter(i=>!SPELL_SKIP.includes(i.w)&&spelledOut(i)===o&&ok(i)); break; }
+    case 'link': return G.link(Math.floor(Math.random()*LINKQ.length));
+    case 'basic': return G.basic(Math.floor(Math.random()*BASICQ.length));
+    case 'plus': return G.plus(Math.floor(Math.random()*PLUSQ.length));
+    case 'def': return G.def(rnd(typeNames));
+    case 'cat': return G.cat(rnd(typeNames));
+    case 'find': return G.find(rnd(typeNames.filter(t=>ITEMS.some(i=>i.t.includes(t)))));
+  }
+  const it=rnd(pool); used.add(it.w); return G[kind](it);
+}
+function build(plan){
+  const used=new Set(), seen=new Set(), out=[];
+  for(const k of plan){ let q=null; for(let tries=0;tries<8;tries++){ q=fresh(k,used); if(q && !seen.has(q.text+q.ans)) break; }
+    if(q){ seen.add(q.text+q.ans); out.push(q); } }
+  return out;
+}
+const PLANS = {
+  quick:['type','basic','pron','pron','combo','count','assim','spell','link','link','def','find','basic','basic','basic'],
+  exam:['type','type','basic','basic','pron','pron','combo','combo','count','count','assim','assim','spell','spell','link','link','link','plus','plus','def']
+};
+function buildReview(){
+  const out=[], seen=new Set();
+  for(const ref of P.missed){ if(out.length>=8) break; const q=regen(ref); if(q && !seen.has(q.text+q.ans)){ seen.add(q.text+q.ans); out.push(q); } }
+  const weak = conceptList().map(c=>({c,b:level(c),s:P.stats[c]})).sort((a,b)=>a.b-b.b || (a.s?a.s.last:'').localeCompare(b.s?b.s.last:''));
+  for(const {c} of weak){ if(out.length>=12) break;
+    let q=null;
+    if(TYPES[c]){ const its=ITEMS.filter(i=>i.t.includes(c)); q = Math.random()<.5 && its.length ? G.type(rnd(its)) : (Math.random()<.5?G.def(c):G.find(c)); }
+    else { const map={"음운론 기초":'basic',"플러스 학습":'plus',"동화 방향·정도":'assim',"유형 조합":'combo',"음운 개수":'count',"표기 반영":'spell',"영역 연결":'link'}; q=fresh(map[c], new Set()); }
+    if(q && !seen.has(q.text+q.ans)){ seen.add(q.text+q.ans); out.push(q); } }
+  return shuffle(out);
+}
+function buildPractice(t){
+  const its=shuffle(ITEMS.filter(i=>i.t.includes(t)));
+  const out=[G.find(t)||G.cat(t), G.def(t)];
+  its.slice(0,3).forEach((it,i)=>out.push(i===1 && !it.form && !it.noPron ? G.pron(it) : G.type(it)));
+  if(out.length<5) out.push(G.cat(t));
+  return shuffle(out).slice(0,5);
+}
+
+/* ===== 효과음 (Web Audio로 직접 합성) ===== */
+let soundOn = true; try{ soundOn = localStorage.getItem('eumun-sound')!=='off'; }catch(e){}
+let actx=null, noiseBuf=null;
+function ac(){ if(!soundOn) return null; try{ if(!actx){ const C=window.AudioContext||window.webkitAudioContext; if(!C) return null; actx=new C(); } if(actx.state==='suspended') actx.resume(); return actx; }catch(e){ return null; } }
+function tone(f, t0, dur, type='triangle', vol=.18, f2=null){ const a=ac(); if(!a) return; const o=a.createOscillator(), g=a.createGain(); const t=a.currentTime+t0;
+  o.type=type; o.frequency.setValueAtTime(f,t); if(f2) o.frequency.exponentialRampToValueAtTime(f2,t+dur);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+.01); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t+dur+.05); }
+function noise(t0, dur, vol=.3, freq=800){ const a=ac(); if(!a) return; if(!noiseBuf){ noiseBuf=a.createBuffer(1,a.sampleRate*.4,a.sampleRate); const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; }
+  const s=a.createBufferSource(), f=a.createBiquadFilter(), g=a.createGain(); const t=a.currentTime+t0; s.buffer=noiseBuf; f.type='lowpass'; f.frequency.value=freq;
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); s.connect(f).connect(g).connect(a.destination); s.start(t); s.stop(t+dur+.05); }
+const SFX = {
+  correct(c){ const up=Math.min(c,6)*40; tone(660+up,0,.12); tone(880+up,.08,.12); tone(1320+up,.16,.22,'sine',.15); },
+  gift(){ tone(300,.5,.14,'sine',.2,900); noise(.55,.12,.15,3000); [1568,2093,2637].forEach((f,i)=>tone(f,.62+i*.06,.18,'sine',.08)); },
+  bonus(){ [784,988,1175,1568].forEach((f,i)=>tone(f,.35+i*.08,.16,'square',.07)); },
+  swoosh(){ noise(0,.35,.12,1500); },
+  bonk(){ tone(160,.38,.28,'square',.25,45); noise(.38,.18,.5,500); tone(420,.55,.35,'sine',.12,180); },
+  tick(){ tone(1200,0,.04,'square',.05); },
+  fanfare(){ [523,659,784,1047].forEach((f,i)=>tone(f,i*.13,.22,'triangle',.18)); tone(1047,.55,.5,'triangle',.16); tone(1319,.55,.5,'sine',.1); },
+  finish(){ [523,659,784].forEach((f,i)=>tone(f,i*.12,.2,'triangle',.14)); }
+};
+function setSoundBtn(){ const b=$('#soundBtn'); if(b){ b.textContent=soundOn?'🔊':'🔇'; b.setAttribute('aria-pressed',String(soundOn)); } }
+$('#soundBtn').onclick=()=>{ soundOn=!soundOn; try{ localStorage.setItem('eumun-sound',soundOn?'on':'off'); }catch(e){} setSoundBtn(); if(soundOn) SFX.correct(0); };
+setSoundBtn();
+
+/* ===== 화면 효과 ===== */
+const reduced = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+function fxLayer(ms){ const d=document.createElement('div'); d.className='fx'; document.body.appendChild(d); setTimeout(()=>d.remove(),ms); return d; }
+const GIFTS=['🎁','🎁','🎁','🍀','🏆','💎'];
+function giftFX(c){
+  if(reduced()) return;
+  const L=fxLayer(1700);
+  const big = c>0 && c%3===0;
+  L.innerHTML = `<div class="gift" style="${big?'font-size:110px':''}">${big?'🏆':'🎁'}</div>` +
+    Array.from({length:big?16:10},(_,i)=>{ const a=i/(big?16:10)*Math.PI*2, r=110+Math.random()*70; return `<span class="spark" style="--dx:${Math.cos(a)*r}px;--dy:${Math.sin(a)*r}px">${['⭐','✨','🌟','💫'][i%4]}</span>`; }).join('') +
+    (big?`<div class="bonus">${c}연속 보너스!</div>`:'');
+  SFX.gift(); if(big) SFX.bonus();
+}
+const CLUB_SVG = `<svg class="club" viewBox="0 0 120 260" aria-hidden="true">
+  <rect x="49" y="150" width="22" height="104" rx="9" fill="#7A4A22" stroke="#4A2C12" stroke-width="4"/>
+  <path d="M52 175h16M52 195h16M52 215h16" stroke="#C99A5B" stroke-width="4"/>
+  <path d="M36 162 Q26 90 28 52 Q31 8 60 6 Q89 8 92 52 Q94 90 84 162 Z" fill="#A86A32" stroke="#4A2C12" stroke-width="5"/>
+  <path d="M46 40 Q44 90 50 140 M72 30 Q78 90 70 145" stroke="#7A4A22" stroke-width="3" fill="none" opacity=".6"/>
+  ${[[44,32],[76,36],[38,70],[60,58],[84,76],[48,104],[74,112],[58,140]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="7.5" fill="#F2C94C" stroke="#8A6A1F" stroke-width="3"/>`).join('')}
+</svg>`;
+const BANG_SVG = `<svg class="bang" viewBox="0 0 200 200" aria-hidden="true">
+  <polygon points="100,5 120,60 175,35 145,85 198,105 140,120 165,175 110,140 95,195 80,140 25,170 55,118 2,98 58,82 30,30 85,58" fill="#FFD43B" stroke="#D9412E" stroke-width="6"/>
+  <text x="100" y="118" text-anchor="middle" font-family="Black Han Sans, sans-serif" font-size="52" fill="#D9412E">쾅!</text>
+</svg>`;
+function clubFX(){
+  if(reduced()){ SFX.bonk(); return; }
+  const L=fxLayer(1700);
+  L.innerHTML = CLUB_SVG + BANG_SVG + ['💫','⭐','💫'].map((s,i)=>`<span class="dizzy" style="animation-delay:${.5+i*.12}s">${s}</span>`).join('');
+  SFX.swoosh(); SFX.bonk();
+  const pl=$('#play'); pl.classList.remove('hit'); void pl.offsetWidth; pl.classList.add('hit'); setTimeout(()=>pl.classList.remove('hit'),900);
+}
+
+/* ===== 게임 진행 ===== */
+const LIMIT=20;
+let mode='quick', round=[], idx=0, score=0, combo=0, correct=0, missed=[], timerId=null, startAt=0, answered=false, practiceType=null, before={};
+const MODE_NAME={quick:"게임",review:"약점 복습",exam:"시험 전날 총정리",practice:"개념 연습"};
+const timed = () => mode==='quick'||mode==='exam';
+function startGame(m, t){
+  if(!WHO){ show('login'); return; }
+  mode=m; practiceType=t||null;
+  round = m==='quick'?shuffle(build(PLANS.quick)) : m==='exam'?shuffle(build(PLANS.exam)) : m==='review'?buildReview() : buildPractice(t);
+  if(!round.length) round=shuffle(build(PLANS.quick));
+  before={}; conceptList().forEach(c=>before[c]=level(c));
+  idx=0; score=0; combo=0; correct=0; missed=[]; given=[]; leftMap={};
+  show('play'); renderQ();
+}
+let given=[], leftMap={}, lastTick=99;
+function renderQ(){
+  const q=round[idx]; const rec=given[idx];
+  answered=!!rec;
+  window.scrollTo(0,0);
+  $('#qnum').textContent=`${MODE_NAME[mode]} ${idx+1} / ${round.length}`; $('#score').textContent=score;
+  $('#combo').textContent = combo>=2?`🔥 ${combo}연속`:'';
+  $('#prevBtn').disabled = idx===0;
+  $('#qtag').textContent=q.tag + (rec?' · 지난 문제 다시 보기':'');
+  $('#qtext').textContent=q.text;
+  $('#qstage').innerHTML = q.it && !q.noStage ? pairHTML(q.it, !!q.reveal || !!rec) : q.box ? `<div class="qbox">${q.box}</div>` : '';
+  $('#options').innerHTML = q.opts.map((o,i)=>`<button class="opt" data-v="${esc(o)}"><b>${i+1}</b><span>${esc(o)}</span></button>`).join('');
+  $('#feedbackWrap').innerHTML='';
+  clearInterval(timerId);
+  const tm=$('#timer'); tm.classList.remove('low');
+  if(rec){ tm.classList.add('off'); markOptions(q, rec.v); showFeedback(q, rec); return; }
+  $('#options').querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>answer(b.dataset.v)));
+  tm.classList.toggle('off',!timed());
+  if(timed()){ const left0 = leftMap[idx]!==undefined ? leftMap[idx] : LIMIT; startAt=performance.now()-(LIMIT-left0)*1000;
+    $('#timerBar').style.transform=`scaleX(${left0/LIMIT})`;
+    timerId=setInterval(()=>{ const left=Math.max(0,LIMIT-(performance.now()-startAt)/1000); $('#timerBar').style.transform=`scaleX(${left/LIMIT})`; if(left<5){ tm.classList.add('low'); const s=Math.ceil(left); if(s!==lastTick){ lastTick=s; if(s>0) SFX.tick(); } } if(left<=0) answer(null); },100); }
+  else $('#timerBar').style.transform='scaleX(1)';
+}
+function popText(t){ const d=document.createElement('div'); d.className='pop'; d.textContent=t; document.body.appendChild(d); setTimeout(()=>d.remove(),900); }
+function markOptions(q, v){
+  $('#options').querySelectorAll('.opt').forEach(b=>{ b.disabled=true; if(b.dataset.v===q.ans) b.classList.add('right'); else if(b.dataset.v===v) b.classList.add('wrong'); });
+  if(q.it && !q.noStage) $('#qstage').innerHTML=pairHTML(q.it,true);
+}
+function showFeedback(q, rec){
+  const ok=rec.ok, v=rec.v;
+  const cl = q.it ? (CLAUSES_OF[q.it.w]||[]).map(c=>`<span class="tag">표준 발음법 ${esc(c.label)}</span>`).join('')+(SPELL_OF[q.it.w]||[]).map(n=>`<span class="tag">한글 맞춤법 ${n}</span>`).join('') : '';
+  const types = (q.it?q.it.t:q.tags.filter(t=>TYPES[t])).map(t=>tchip(t,false)).join('');
+  const last = idx===round.length-1;
+  const nextLabel = given[idx+1] ? '다음 문제 →' : (last?'결과 보기':'다음 →');
+  $('#feedbackWrap').innerHTML=`<div class="feedback ${ok?'good':'bad'}"><div class="big">${ok?'정답!':(v===null?'시간 초과':'땡!')}</div>
+    ${!ok?`<p><b>정답: ${esc(q.ans)}</b></p>`:''}
+    ${q.it?`<p style="font-size:17px">${esc(shown(q.it))}</p>`:''}
+    <div>${types}</div>
+    <ul class="steps-list">${stepsOf(q.why).map(s=>`<li>${esc(s)}</li>`).join('')}</ul>
+    ${cl?`<div>${cl}</div>`:''}
+    <div class="row">${idx>0?'<button class="btn ghost" id="prevBtn2">◀ 이전 문제</button>':''}<button class="btn" id="nextBtn">${nextLabel}</button></div></div>`;
+  const nb=$('#nextBtn'); nb.focus(); nb.addEventListener('click',goNext);
+  const pb=$('#prevBtn2'); if(pb) pb.addEventListener('click',goPrev);
+}
+function goNext(){ if(idx===round.length-1 && given[idx]){ finish(); return; } idx++; renderQ(); }
+function goPrev(){
+  if(idx===0) return;
+  if(!given[idx] && timed()) leftMap[idx]=Math.max(1,LIMIT-(performance.now()-startAt)/1000);
+  clearInterval(timerId); idx--; renderQ();
+}
+function answer(v){
+  if(answered) return; answered=true; clearInterval(timerId);
+  const q=round[idx]; const ok = v===q.ans;
+  let gained=0;
+  if(ok){ combo++; correct++; const left=timed()?Math.max(0,LIMIT-(performance.now()-startAt)/1000):LIMIT/2; gained=100+Math.round(50*left/LIMIT)+Math.min(50,(combo-1)*10); score+=gained; popText(`+${gained}`); SFX.correct(combo); giftFX(combo); }
+  else { combo=0; missed.push(q); clubFX(); }
+  record(q.tags, ok, q.ref);
+  given[idx]={v,ok,gained};
+  $('#score').textContent=score; $('#combo').textContent = combo>=2?`🔥 ${combo}연속`:'';
+  markOptions(q, v); showFeedback(q, given[idx]);
+}
+function confetti(){
+  const box=document.createElement('div'); box.className='confetti';
+  const cols=['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--grid)'];
+  for(let i=0;i<40;i++){ const p=document.createElement('i'); p.style.left=Math.random()*100+'%'; p.style.background=cols[i%5]; p.style.animationDelay=(Math.random()*.6)+'s'; box.appendChild(p); }
+  document.body.appendChild(box); setTimeout(()=>box.remove(),3200);
+}
+function finish(){
+  clearInterval(timerId);
+  P.plays++; P.points+=score; if(mode==='quick') P.best=Math.max(P.best||0,score); P.days.push(today()); P.days=[...new Set(P.days)].slice(-60); saveLocal(); syncRemote();
+  show('result');
+  const n=round.length, rate=correct/n;
+  $('#resTitle').textContent = `${MODE_NAME[mode]}${practiceType?' · '+practiceType:''} 결과`;
+  $('#finalScore').textContent=score;
+  $('#finalDetail').textContent=`${n}문제 중 ${correct}문제 정답 · ${rate>=.9?'완벽해요!':rate>=.7?'좋아요! 틀린 것만 다시 보면 끝':'약점 복습으로 한 번 더!'}`;
+  const up=conceptList().filter(c=>level(c)>before[c]), down=conceptList().filter(c=>level(c)<before[c]&&before[c]>0);
+  $('#growth').innerHTML = `<div class="panel"><h3>개념 마스터 변화</h3>${up.length?`<p>⬆ ${up.map(esc).join(', ')}</p>`:''}${down.length?`<p class="k2">⬇ 다시 볼 개념: ${down.map(esc).join(', ')}</p>`:''}<div class="mgrid">${masteryHTML()}</div></div>`;
+  $('#reviewPanel').hidden = missed.length===0;
+  $('#review').innerHTML = missed.map(q=>`<li><b>${esc(q.text)}</b>${q.it?` — ${esc(shown(q.it))}`:''}<br>정답: ${esc(q.ans)}<br><span class="muted">${esc(stepsOf(q.why)[0]||'')}</span></li>`).join('');
+  if(rate>=.75){ confetti(); SFX.fanfare(); } else SFX.finish();
+  if(mode==='quick') saveScore(); else $('#saveNote').textContent = mode==='quick'?'':'이 모드는 순위표에 기록되지 않아요. 학습 기록은 저장돼요.';
+}
+$('#againBtn') && ($('#againBtn').onclick=()=>startGame(mode, practiceType));
+$('#quitBtn').onclick=()=>{ clearInterval(timerId); if(idx>0||answered) finish(); else show('home'); };
+function goHomeFromGame(){
+  ask({text:'게임을 그만두고 처음 화면으로 갈까요? 지금까지 얻은 포인트와 기록은 저장돼요.'}).then(ok=>{ if(!ok) return;
+  clearInterval(timerId);
+  if(score>0){ P.points+=score; P.days.push(today()); P.days=[...new Set(P.days)].slice(-60); }
+  saveLocal(); syncRemote(); show('learn');
+  });
+}
+$('#homeBtn').onclick=goHomeFromGame; $('#homeBtn2').onclick=goHomeFromGame; $('#prevBtn').onclick=goPrev;
+document.addEventListener('keydown',e=>{
+  if($('#play').hidden) return;
+  if(e.key==='ArrowLeft'){ goPrev(); return; }
+  if(!answered && /^[1-4]$/.test(e.key)){ const b=$('#options').querySelectorAll('.opt')[+e.key-1]; if(b) b.click(); }
+});
+
+/* ===== 공유 기록 (db) ===== */
+let db=null, auth=null, uid=null, canWrite=null, isOwner=false, boardDocs=[], boardUnsub=null, teacherEmail="";
+function fbStatus(ok, msg){ ['#fbStat1','#fbStat2'].forEach(s=>{ const el=$(s); if(!el) return; el.className='fbstat '+(ok===null?'':ok?'ok':'bad'); el.innerHTML=msg; }); }
+const FB_ERR = {
+  'auth/api-key-not-valid':'❌ 연결 정보(apiKey)가 틀려요. 콘솔에서 복사한 firebaseConfig를 그대로 다시 넣어야 해요.',
+  'auth/invalid-api-key':'❌ 연결 정보(apiKey)가 틀려요. 콘솔에서 복사한 firebaseConfig를 그대로 다시 넣어야 해요.',
+  'auth/admin-restricted-operation':'❌ 익명 로그인이 꺼져 있어요. 콘솔 → Authentication → 로그인 방법 → 익명 → 사용 설정',
+  'auth/operation-not-allowed':'❌ 익명 로그인이 꺼져 있어요. 콘솔 → Authentication → 로그인 방법 → 익명 → 사용 설정',
+  'auth/configuration-not-found':'❌ Authentication을 아직 시작하지 않았어요. 콘솔 → Authentication → 시작하기 → 익명 사용 설정',
+  'auth/unauthorized-domain':'❌ 이 주소가 등록되어 있지 않아요. 콘솔 → Authentication → 설정 → 승인된 도메인에 지금 주소를 추가하세요.',
+  'auth/operation-not-supported-in-this-environment':'❌ 파일을 컴퓨터에서 바로 열었어요. Netlify나 Firebase Hosting에 올린 주소로 열어야 연결돼요.',
+  'auth/network-request-failed':'❌ 인터넷 연결을 확인해 주세요.',
+  'permission-denied':'❌ 보안 규칙이 막고 있어요. 콘솔 → Firestore → 규칙에 setup.md의 규칙을 붙여 넣고 게시하세요.',
+  'not-found':'❌ Firestore 데이터베이스가 없어요. 콘솔 → Firestore Database → 데이터베이스 만들기',
+  'failed-precondition':'❌ Firestore 데이터베이스가 없어요. 콘솔 → Firestore Database → 데이터베이스 만들기',
+  'unavailable':'❌ Firestore에 닿지 못했어요. 인터넷 연결 또는 데이터베이스 생성 여부를 확인하세요.'
+};
+const fbErrMsg = e => (e&&FB_ERR[e.code]) || `❌ 연결 오류: ${esc((e&&(e.code||e.message))||'알 수 없음')}`;
+async function fbSelfTest(){
+  try{ await db.doc("eumun_data/users/"+uid+"/ping").set({at:Date.now()}); fbStatus(true,`✅ 기록 서버 연결됨 · 프로젝트 ${esc(FIREBASE_CONFIG.projectId)} · 학생 기록이 저장돼요.`); }
+  catch(e){ fbStatus(false, fbErrMsg(e)+`<br><span class="small">(오류 코드: ${esc(e.code||'')})</span>`); }
+}
+async function initShared(){
+  if(location.protocol==='file:'){ fbStatus(false, FB_ERR['auth/operation-not-supported-in-this-environment']); }
+  if(typeof firebase==='undefined'){ fbStatus(false,'❌ Firebase 프로그램을 불러오지 못했어요. 인터넷 연결을 확인하세요.'); $('#boardNote').textContent='기록 서버에 연결할 수 없어요. 인터넷 연결을 확인해 주세요. 게임과 학습 기록은 이 기기에 저장돼요.'; return; }
+  try{ firebase.initializeApp(FIREBASE_CONFIG); }catch(e){ fbStatus(false, fbErrMsg(e)); }
+  db=firebase.firestore(); auth=firebase.auth();
+  auth.onAuthStateChanged(async u=>{
+    if(!u){ isOwner=false; try{ await auth.signInAnonymously(); }catch(e){ fbStatus(false, fbErrMsg(e)+`<br><span class="small">(오류 코드: ${esc(e.code||'')})</span>`); $('#boardNote').textContent='기록 서버에 로그인하지 못했어요.'; } return; }
+    uid=u.uid; canWrite=true; isOwner=!u.isAnonymous; teacherEmail=u.email||'';
+    $('#ownerTools').hidden=!isOwner; updateTeacherUI();
+    if(!isOwner) fbSelfTest();
+    if(!boardUnsub) boardUnsub=db.collection("eumun_scores").orderBy("best","desc").limit(30).onSnapshot(snap=>{ boardDocs=snap.docs; renderBoard(); },(e)=>{ $('#boardNote').textContent='순위표를 불러오지 못했어요.'; fbStatus(false, fbErrMsg(e)); });
+    if(!isOwner){ pullRemote(); }
+    if(!$('#teacher').hidden) openTeacher();
+  });
+}
+let syncing=false, lastSync=0;
+async function syncRemote(){
+  if(!db||!uid||canWrite===false||syncing||isOwner) return;
+  syncing=true; lastSync=Date.now();
+  if(!WHO){ syncing=false; return; }
+  const key=whoKey(WHO);
+  try{ await db.doc("eumun_data/users/"+uid+"/p-"+key).set(JSON.parse(JSON.stringify(P))); }catch(e){}
+  if(P.sid && P.name){
+    const weak=conceptList().filter(c=>P.stats[c]&&P.stats[c].box===0&&P.stats[c].w>0);
+    try{ await db.doc("eumun_students/"+uid).set({at:Date.now()}); }catch(e){}
+    try{ await db.doc("eumun_students/"+uid+"/eumun_rec/"+key).set({sid:P.sid, name:P.name, points:P.points, studySec:P.studySec, gameSec:P.gameSec, plays:P.plays, answered:P.answered, correctTotal:P.correctTotal, best:P.best||0, mastered:conceptList().filter(c=>level(c)>=3).length, weak, streak:streak(), lastAt:Date.now()}); }catch(e){}
+  }
+  syncing=false;
+}
+function renderBoard(){
+  const rows = boardDocs.map(d=>({id:d.id,...d.data()}));
+  $('#boardNote').textContent = rows.length ? (canWrite===false?'순위는 볼 수 있지만, 이 계정은 점수를 올릴 수 없어요.':'게임 최고 점수 상위 30명') : '아직 기록이 없어요. 첫 기록의 주인공이 되어 보세요.';
+  $('#board').innerHTML = rows.map(r=>`<li class="${r.id===uid?'me':''}"><span class="n">${esc(r.name||'이름 없음')}</span><span class="s">${Number(r.best)||0}</span></li>`).join('');
+}
+async function saveScore(){
+  const note=$('#saveNote');
+  if(!db||!uid){ note.textContent='이번 점수는 이 기기에만 보여요.'; return; }
+  if(canWrite===false){ note.textContent='이 계정은 순위표에 점수를 올릴 수 없어요.'; return; }
+  const name=boardName();
+  try{
+    const ref=db.collection("eumun_scores").doc(uid);
+    const cur=await ref.get(); const prev=cur.exists?Number(cur.data().best)||0:0;
+    if(score>prev){ await ref.set({name, best:score, correct, at:Date.now()}); note.textContent= prev?`최고 기록 경신! (이전 ${prev}점)`:'순위표에 기록했어요.'; }
+    else { if(cur.exists && cur.data().name!==name) await ref.update({name}); note.textContent=`최고 기록 ${prev}점은 그대로예요.`; }
+  }catch(e){ canWrite=false; note.textContent='점수를 저장하지 못했어요.'; }
+}
+async function resetBoard(){
+  if(!isOwner||!db) return;
+  if(!(await ask({text:'순위표의 모든 기록을 지울까요? 되돌릴 수 없어요.'}))) return;
+  const btn=$('#resetBtn'); btn.disabled=true; btn.textContent='지우는 중…';
+  try{ const all=await db.collection("eumun_scores").get(); for(const d of all.docs){ await db.collection("eumun_scores").doc(d.id).delete(); } }catch(e){ ask({text:'일부 기록을 지우지 못했어요. 다시 시도해 주세요.',alert:1}); }
+  btn.disabled=false; btn.textContent='순위표 비우기';
+}
+
+/* ===== 학생 정보 · 학습 시간 ===== */
+function fmtTime(s){ s=Math.round(s||0); const hh=Math.floor(s/3600), mm=Math.floor(s%3600/60); return hh?`${hh}시간 ${mm}분`:`${mm}분`; }
+async function pullRemote(){
+  if(!db||!uid||!WHO) return;
+  try{ const s=await db.doc("eumun_data/users/"+uid+"/p-"+whoKey(WHO)).get(); if(s.exists){ const r=s.data(); if((r.answered||0)>(P.answered||0)||(r.studySec||0)>(P.studySec||0)+60){ P=Object.assign(P0(),JSON.parse(JSON.stringify(r))); P.sid=WHO.sid; P.name=WHO.name; saveLocal(); if(!$('#home').hidden) renderHome(); } } }catch(e){}
+}
+function login(){
+  const sid=$('#lsid').value.replace(/\s/g,''), name=$('#lname').value.replace(/\s/g,'');
+  const note=$('#lNote');
+  if(!/^[0-9A-Za-z]{1,8}$/.test(sid)){ note.textContent='학번을 숫자로 입력하세요. (예: 10315)'; note.classList.add('err'); $('#lsid').focus(); return; }
+  if(!name || [...name].length>10){ note.textContent='이름을 입력하세요.'; note.classList.add('err'); $('#lname').focus(); return; }
+  WHO={sid,name}; try{ localStorage.setItem('eumun-who',JSON.stringify(WHO)); }catch(e){}
+  loadLocal(); saveLocal(); pullRemote(); syncRemote();
+  note.classList.remove('err'); show('learn');
+}
+async function switchStudent(){
+  if(!(await ask({text:`${WHO?WHO.name:''} 학생의 기록을 저장하고 다른 학생으로 바꿀까요?`}))) return;
+  saveLocal(); await syncRemote(); WHO=null; P=P0(); try{ localStorage.removeItem('eumun-who'); }catch(e){}
+  teacherUnlocked=false; $('#lsid').value=''; $('#lname').value=''; show('login');
+}
+$('#loginBtn').onclick=login;
+$('#loginTeacher').onclick=()=>{ teacherUnlocked=true; show('teacher'); };
+['#lsid','#lname'].forEach(s=>$(s).addEventListener('keydown',e=>{ if(e.key==='Enter') login(); }));
+$('#switchBtn').onclick=switchStudent;
+document.addEventListener('click',e=>{ if(e.target.closest('#helloSwitch')) switchStudent(); });
+function boardName(){ const n=P.name||''; return `${P.sid||''} ${n?n[0]+'○'.repeat(Math.max(1,[...n].length-1)):''}`.trim()||'이름 없음'; }
+let lastAct=Date.now();
+['pointerdown','keydown','touchstart','scroll'].forEach(ev=>addEventListener(ev,()=>{ lastAct=Date.now(); },{passive:true}));
+setInterval(()=>{
+  if(!WHO || document.visibilityState!=='visible' || Date.now()-lastAct>90000) return;
+  P.studySec+=15; if(!$('#play').hidden) P.gameSec+=15; saveLocal();
+  if(Date.now()-lastSync>300000) syncRemote();
+},15000);
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ saveLocal(); if(Date.now()-lastSync>60000) syncRemote(); } });
+
+/* ===== 확인 창 ===== */
+function ask({text, input, alert}){
+  return new Promise(res=>{
+    const m=$('#modal'), inp=$('#mInput');
+    $('#mText').textContent=text; $('#mErr').textContent=''; inp.hidden=!input; inp.value='';
+    $('#mCancel').hidden=!!alert; $('#mOk').textContent=alert?'확인':(input?'들어가기':'확인');
+    m.hidden=false; setTimeout(()=>(input?inp:$('#mOk')).focus(),30);
+    const done=v=>{ m.hidden=true; $('#mOk').onclick=$('#mCancel').onclick=inp.onkeydown=null; res(v); };
+    $('#mOk').onclick=()=>done(input?inp.value:true);
+    $('#mCancel').onclick=()=>done(null);
+    inp.onkeydown=e=>{ if(e.key==='Enter') done(inp.value); if(e.key==='Escape') done(null); };
+  });
+}
+/* ===== 교사용 잠금 ===== */
+let teacherUnlocked=false;
+const TKEY=0x2fe24e98;
+function fnv(s){ let h=0x811c9dc5; for(const ch of s){ h^=ch.charCodeAt(0); h=Math.imul(h,0x01000193)>>>0; } return h>>>0; }
+async function askTeacher(){ teacherUnlocked=true; show('teacher'); }
+$('#teacherBtn').onclick=()=>{ teacherUnlocked ? show('teacher') : askTeacher(); };
+
+/* ===== 교사용 관리 ===== */
+let tDocs=[], tSort='sid', tDir=1;
+let tLoading=false;
+function updateTeacherUI(){ const t=isOwner; $('#tLogin').hidden=t; $('#tData').hidden=!t; $('#tLogout').hidden=!t; $('#tWho').textContent=t?teacherEmail:''; }
+async function openTeacher(){
+  updateTeacherUI();
+  if(!db){ $('#tNote').textContent='기록 서버에 연결할 수 없어요.'; return; }
+  if(isOwner){ renderTeacher(); loadTeacher(); } else $('#tNote').textContent='';
+}
+$('#tLoginBtn').onclick=async()=>{
+  const em=$('#tEmail').value.trim(), pw=$('#tPw').value, m=$('#tLoginMsg');
+  if(!auth){ m.textContent='기록 서버에 연결할 수 없어요.'; return; }
+  if(!em||!pw){ m.textContent='이메일과 비밀번호를 넣어 주세요.'; return; }
+  m.textContent='로그인 중…';
+  try{ await auth.signInWithEmailAndPassword(em,pw); $('#tPw').value=''; m.textContent=''; }
+  catch(err){ m.textContent='로그인하지 못했어요. 이메일과 비밀번호를 확인해 주세요.'; }
+};
+$('#tPw').addEventListener('keydown',e=>{ if(e.key==='Enter') $('#tLoginBtn').click(); });
+$('#tLogout').onclick=async()=>{ try{ await auth.signOut(); }catch(e){} isOwner=false; tDocs=[]; teacherUnlocked=false; show('learn'); };
+async function loadTeacher(){
+  if(tLoading) return; tLoading=true; $('#tNote').textContent='학생 기록을 불러오는 중…';
+  try{
+    const snap=await db.collectionGroup("eumun_rec").get();
+    const rows=snap.docs.map(x=>({id:x.ref.path,...x.data()}));
+    const best={}; rows.forEach(r=>{ const k=(r.sid||'')+'|'+(r.name||''); if(!best[k]||(r.lastAt||0)>(best[k].lastAt||0)) best[k]=r; });
+    tDocs=Object.values(best); $('#tNote').textContent='';
+  }catch(e){ $('#tNote').textContent = (e&&e.code==='permission-denied') ? '이 계정은 교사 계정으로 등록되어 있지 않아요. firestore.rules의 선생님 이메일을 확인해 주세요.' : '기록을 불러오지 못했어요. 다시 시도해 주세요.'; }
+  tLoading=false; renderTeacher();
+}
+const TCOLS=[['sid','학번'],['name','이름'],['points','포인트'],['studySec','학습 시간'],['plays','게임'],['rate','정답률'],['mastered','마스터'],['weak','약점'],['lastAt','최근']];
+function tRows(){
+  const f=$('#tFilter').value.trim();
+  return tDocs.filter(r=>!f||String(r.sid||'').startsWith(f)).map(r=>({...r,rate:r.answered?Math.round(100*r.correctTotal/r.answered):0}))
+    .sort((a,b)=>{ const x=a[tSort], y=b[tSort]; const v = Array.isArray(x)? x.length-(y||[]).length : (typeof x==='number'||typeof y==='number') ? (x||0)-(y||0) : String(x||'').localeCompare(String(y||''),'ko'); return v*tDir; });
+}
+function renderTeacher(){
+  const rows=tRows();
+  const n=rows.length, sum=k=>rows.reduce((s,r)=>s+(r[k]||0),0);
+  $('#tStats').innerHTML=`<div class="stat"><b>${n}</b><span>학생 수</span></div><div class="stat"><b>${n?Math.round(sum('points')/n):0}</b><span>평균 포인트</span></div><div class="stat"><b>${fmtTime(n?sum('studySec')/n:0)}</b><span>평균 학습 시간</span></div><div class="stat"><b>${n?Math.round(rows.reduce((s,r)=>s+r.rate,0)/n):0}%</b><span>평균 정답률</span></div>`;
+  const cnt={}; rows.forEach(r=>(r.weak||[]).forEach(c=>cnt[c]=(cnt[c]||0)+1));
+  const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,8); const mx=top.length?top[0][1]:1;
+  $('#tWeak').innerHTML = top.length? top.map(([c,v])=>`<div class="wbar"><span>${esc(c)}</span><i style="width:${Math.max(6,160*v/mx)}px"></i><b>${v}명</b></div>`).join('') : '<p class="muted">아직 약점 기록이 없어요.</p>';
+  $('#tTable').innerHTML = `<thead><tr>${TCOLS.map(([k,l])=>`<th><button data-sort="${k}">${l}${tSort===k?(tDir>0?' ▲':' ▼'):''}</button></th>`).join('')}</tr></thead><tbody>`+
+    rows.map(r=>`<tr><td>${esc(r.sid||'')}</td><td>${esc(r.name||'')}</td><td>${r.points||0}</td><td>${fmtTime(r.studySec)}</td><td>${r.plays||0}</td><td>${r.rate}%</td><td>${r.mastered||0}/${conceptList().length}</td><td class="wk">${esc((r.weak||[]).slice(0,4).join(', '))}</td><td>${r.lastAt?new Date(r.lastAt).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'}):''}</td></tr>`).join('')+'</tbody>';
+  $('#tTable').querySelectorAll('[data-sort]').forEach(b=>b.onclick=()=>{ const k=b.dataset.sort; if(tSort===k) tDir=-tDir; else { tSort=k; tDir=(k==='sid'||k==='name')?1:-1; } renderTeacher(); });
+  if(!tLoading) $('#tNote').textContent = n? '' : '아직 기록을 보낸 학생이 없어요. 학생이 입장해서 게임을 한 판 마치면 여기에 나타나요.';
+}
+$('#tFilter').addEventListener('input',()=>renderTeacher());
+$('#tReload').onclick=()=>loadTeacher();
+$('#csvBtn').onclick=async()=>{
+  const rows=tRows(); const q=s=>`"${String(s??'').replace(/"/g,'""')}"`;
+  const csv='\uFEFF'+['학번,이름,누적 포인트,학습 시간(분),게임 수,푼 문제,정답률(%),마스터 개념,약점 개념,연속 학습일,최근 학습'].concat(rows.map(r=>[r.sid,r.name,r.points||0,Math.round((r.studySec||0)/60),r.plays||0,r.answered||0,r.rate,r.mastered||0,(r.weak||[]).join(' / '),r.streak||0,r.lastAt?new Date(r.lastAt).toLocaleString('ko-KR'):''].map(q).join(','))).join('\n');
+  saveFile(`음운변동_학습기록_${today()}.csv`, csv, 'text/csv;charset=utf-8');
+};
+
+/* ===== 시작 ===== */
+$('#heroWord').innerHTML=sheetHTML("숙녀");
+$('#heroPron').innerHTML=sheetHTML("숭녀","숙녀",true);
+try{ const w=JSON.parse(localStorage.getItem('eumun-who')||'null'); if(w&&w.sid&&w.name) WHO=w; else { const o=JSON.parse(localStorage.getItem(OLDKEY)||'null'); if(o&&o.sid&&o.name){ WHO={sid:o.sid,name:o.name}; localStorage.setItem('eumun-who',JSON.stringify(WHO)); if(!localStorage.getItem('eumun-p:'+whoKey(WHO))) localStorage.setItem('eumun-p:'+whoKey(WHO),JSON.stringify(o)); } } }catch(e){}
+loadLocal();
+$('#loginWord').innerHTML=sheetHTML("숙녀"); $('#loginPron').innerHTML=sheetHTML("숭녀","숙녀",true);
+renderBasicStatic(); renderBasic(); renderCats(); renderMindmap(); renderMap(null); renderRules(); renderMiddle(); renderFilters(); renderWords(); renderDetail();
+$('#resetBtn').onclick=resetBoard;
+show('learn');
+initShared();
+
+</script>
+</body>
+</html>
