@@ -10,3 +10,9 @@
 방법 B (CLI): 이 폴더에서 `npx vercel --prod`
 
 배포가 끝나면 `https://프로젝트이름.vercel.app` 주소가 생겨요. 학생용 링크는 앱 안의 수업 관리 → 학생 공유 켜기에서 만들어요.
+
+## 3. AI 기능 (Claude API 키)
+API 키는 index.html에 넣지 않고 Vercel 환경 변수로만 둡니다. (`api/ai.js`가 서버에서 호출)
+1. Vercel 프로젝트 → Settings → Environment Variables → `ANTHROPIC_API_KEY` = 발급받은 키 (Production 체크)
+2. (선택) `ALLOWED_EMAILS` = 사용할 교사 이메일들을 쉼표로 구분, `ANTHROPIC_MODEL` = 모델 이름 (기본 claude-haiku-5-5)
+3. Deployments → 최신 배포 ⋯ → Redeploy

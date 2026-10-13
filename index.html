@@ -1089,7 +1089,7 @@ function optimize(p,fresh){
   return best.assign}
 const AI_THEMES=['무지개 물결 배치','새 친구 대탐험 배치','별똥별 지그재그 배치','비밀 작전 배치','행운 클로버 배치'];
 async function aiArrange(p,opts){
-  let sample=null;try{if(window.claude&&claude.use)sample=await claude.use('sample')}catch(e){}
+  let sample=null;try{sample=await getSample()}catch(e){}
   const fallback=(why)=>{const a=optimize(p);toast(why||'AI를 쓸 수 없어 창의 알고리즘으로 배치했어요');return{assign:a,theme:AI_THEMES[Math.floor(Math.random()*AI_THEMES.length)],comment:'성별·실력·지난 이웃을 고려해 새로운 조합을 찾았어요.'}};
   if(!sample)return fallback();
   const lv=levelMap(p.pool);
@@ -1463,7 +1463,7 @@ function renderAdv(){
   advLast=L;return L}
 let advLast=null;
 async function askAdvice(){
-  if(advBusy)return;const L=renderAdv(),el=$('#advAI');let sample=null;try{if(window.claude&&claude.use)sample=await claude.use('sample')}catch(e){}
+  if(advBusy)return;const L=renderAdv(),el=$('#advAI');let sample=null;try{sample=await getSample()}catch(e){}
   if(!sample){el.textContent='AI를 쓸 수 없어 위의 자동 점검 결과만 보여드려요.';return}
   advBusy=true;el.innerHTML='<span class="spin">💬</span> 기록을 살펴보는 중…';
   const lv=L.lv,rows=[];
@@ -1496,7 +1496,7 @@ function renderIdeas(){
   $('#ideaList').innerHTML=IDEAS.map((d,i)=>`<div class="idea"><b>${esc(d.emoji)} ${esc(d.title)}</b><p>${esc(d.desc)}</p>${d.rule?`<p class="why">AI 규칙: ${esc(d.rule)}</p>`:''}<button class="btn sm" data-idea="${i}">이 방법으로 뽑기</button></div>`).join('')}
 async function askIdeas(){
   if(!S.students.length){toast('먼저 학생 명렬표를 입력해 주세요');return}
-  const btn=$('#ideaGo');let sample=null;try{if(window.claude&&claude.use)sample=await claude.use('sample')}catch(e){}
+  const btn=$('#ideaGo');let sample=null;try{sample=await getSample()}catch(e){}
   const note=$('#ideaNote');IDEAS=[];renderIdeas();
   if(!sample){IDEAS=FALLBACK_IDEAS;note.textContent='AI를 쓸 수 없어 기본 제안을 보여드려요';renderIdeas();return}
   btn.disabled=true;const old=btn.innerHTML;btn.innerHTML='<span class="spin">💡</span> 생각하는 중…';note.textContent='';
@@ -1667,6 +1667,15 @@ async function flushPush(){
 async function cloudDelete(id,sid){
   if(!fb.user||!fb.db)return;pend.delete(id);
   try{await profCol().doc(id).delete();if(sid)await fb.db.collection('shares').doc(sid).delete()}catch(e){setSync('err',e.code||e.message)}}
+
+/* ---- AI (Vercel 서버 함수 /api/ai 경유, API 키는 서버에만 있어요) ---- */
+async function getSample(){
+  if(!fb.user)return null;
+  return async(prompt)=>{
+    const idToken=await fb.user.getIdToken();
+    const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken,prompt})});
+    if(!r.ok)throw new Error('ai '+r.status);
+    return await r.json()}}
 
 /* ---- 학생 공유 ---- */
 const rndId=()=>{const a=new Uint8Array(12);crypto.getRandomValues(a);return[...a].map(x=>'abcdefghjkmnpqrstuvwxyz23456789'[x%31]).join('')};
