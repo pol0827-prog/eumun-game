@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 교사 본인의 수업·기록은 본인만 읽고 쓸 수 있어요
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // 학생용 공유 링크: 링크(문서 ID)를 아는 사람만 읽기, 쓰기는 만든 교사만
+    match /shares/{id} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if request.auth != null
+                    && request.resource.data.owner == request.auth.uid;
+      allow update, delete: if request.auth != null
+                    && resource.data.owner == request.auth.uid
+                    && request.resource.data.owner == resource.data.owner;
+    }
+  }
+}
