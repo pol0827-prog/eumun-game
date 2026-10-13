@@ -1,12 +1,11 @@
-// Vercel 서버 함수: Anthropic API 키는 환경 변수(ANTHROPIC_API_KEY)에만 두고, 브라우저에는 노출하지 않아요.
+// Vercel 서버 함수: AI 키(GEMINI_API_KEY 또는 ANTHROPIC_API_KEY)는 환경 변수에만 두고, 브라우저에는 노출하지 않아요.
 // 로그인한 교사(Firebase ID 토큰 확인)만 사용할 수 있어요.
 const FIREBASE_API_KEY = 'AIzaSyBEXpoKO30KUa0ASDoa-heAk24IBfR0nPI'; // Firebase 웹 키는 공개용이에요
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return res.status(500).json({ error: 'missing_api_key' });
+  if (!process.env.GEMINI_API_KEY && !process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: 'missing_api_key' });
 
   const body = typeof req.body === 'string' ? safeJson(req.body) : (req.body || {});
   const { idToken, prompt } = body;
@@ -30,8 +29,27 @@ module.exports = async (req, res) => {
   const allow = (process.env.ALLOWED_EMAILS || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
   if (allow.length && !allow.includes(email)) return res.status(403).json({ error: 'forbidden' });
 
-  // 3) Claude 호출
+  // 3) AI 호출: GEMINI_API_KEY가 있으면 Gemini, 없으면 ANTHROPIC_API_KEY로 Claude 호출
   try {
+    const gem = process.env.GEMINI_API_KEY;
+    if (gem) {
+      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
+        method: 'POST',
+        headers: { 'x-goog-api-key': gem, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 4096, temperature: 0.9 }
+        })
+      });
+      if (!r.ok) return res.status(502).json({ error: 'upstream_' + r.status });
+      const j = await r.json();
+      const parts = (j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [];
+      const text = parts.map(x => x.text || '').join('');
+      return res.status(200).json({ text });
+    }
+    const key = process.env.ANTHROPIC_API_KEY;
+    if (!key) return res.status(500).json({ error: 'missing_api_key' });
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
