@@ -271,7 +271,8 @@ body.shake .app,body.shake .sign{animation:shake .35s}
   #printSheet .rtab tr:nth-child(even) td{background:#fbf6ec}
   #printSheet .rtab td.nm{text-align:left;padding-left:5px}
   #printSheet .rnote{font-size:9.5px;margin:3px 0 0;line-height:1.3;color:#6b5a4a}
-  #printSheet .pkind{display:inline-block;font-size:13px;border:2px solid #86a85a;border-radius:999px;padding:0 9px;margin-left:6px;vertical-align:middle;background:#eef6dc}
+  #printSheet .ph{position:relative}
+  #printSheet .pkind{position:absolute;right:0;top:4px;font-size:13px;border:2px solid #86a85a;border-radius:999px;padding:0 9px;background:#eef6dc}
 }
 @media (prefers-reduced-motion:reduce){
   .seat.popin,.seat.pop .desk,#gcount.slam,body.shake .app,body.shake .sign{animation:none}
@@ -1067,13 +1068,19 @@ function snapChart(root,sn){
 function renderHistView(){const v=$('#histView'),r=getRound(histSel),hp=histSel?histSel.split('|')[0]:'';
   if(!r){v.innerHTML='';return}
   if(!r.snap){v.innerHTML='<p class="hint">이 회차는 자리표 그림이 저장되기 전에 기록되어 이웃 정보만 남아 있어요.</p>';return}
-  v.innerHTML=`<div class="stat" style="margin-bottom:6px">${kindBadge(r.kind||(P.list[hp]||{}).kind)} <b>${esc(r.cname||(P.list[hp]||{}).name||'')}</b> · ${esc(periodText(r))} · ${new Date(r.t).toLocaleDateString('ko-KR')} 기록 <small>(${S.view==='student'?'학생 시점':'교사 시점'})</small></div><div class="board"><div class="chartWrap"><div class="chart" id="hc"></div></div></div>${hp===P.cur?'<div class="row2" style="margin-top:8px"><button class="btn sky sm" id="hLoad">이 자리표를 현재 자리로 불러오기</button></div>':'<p class="hint">다른 수업의 기록이에요. 불러오려면 먼저 그 수업으로 이동해 주세요.</p>'}`;
+  const ri=+histSel.split('|')[1];
+  const act=hp===P.cur?'<div class="row2" style="margin:0 0 8px"><button class="btn mint" id="hLoad" type="button">✅ 이 자리를 현재 자리로 배치하기</button></div>'
+    :`<div class="row2" style="margin:0 0 8px"><button class="btn mint" id="hLoad" type="button">✅ 이 자리를 지금 수업(‘${esc(cp().name)}’) 현재 자리로 배치하기</button><button class="btn sky sm" id="hGoLoad" type="button">↪ 그 수업으로 이동해서 배치하기</button></div><p class="hint" style="margin:0 0 8px">다른 수업의 기록이에요. 이름이 같은 학생끼리 맞춰서 앉히고, 지금 명렬표에 없는 이름은 빈자리로 둬요.</p>`;
+  v.innerHTML=`<div class="stat" style="margin-bottom:6px">${kindBadge(r.kind||(P.list[hp]||{}).kind)} <b>${esc(r.cname||(P.list[hp]||{}).name||'')}</b> · ${esc(periodText(r))} · ${new Date(r.t).toLocaleDateString('ko-KR')} 기록 <small>(${S.view==='student'?'학생 시점':'교사 시점'})</small></div>${act}<div class="board"><div class="chartWrap"><div class="chart" id="hc"></div></div></div>`;
   snapChart($('#hc'),r.snap);
-  if($('#hLoad'))$('#hLoad').onclick=()=>{const byName=new Map(S.students.map(x=>[x.name,x.id]));const sn=r.snap;
-    if(!sn.rows||!sn.cols||!Array.isArray(sn.seats)){toast('이 기록에는 자리표 정보가 없어요');return}
-    pushHist();let miss=0;S.rows=sn.rows;S.cols=sn.cols;S.pair=!!sn.pair;S.seats=sn.seats.map(x=>{if(x.o)return{sid:null,off:true,lock:false};const id=x.n?byName.get(x.n):null;if(x.n&&id==null)miss++;return{sid:id??null,off:false,lock:false}});
-    S.gmap={};sn.seats.forEach(x=>{if(x.g&&byName.has(x.n))S.gmap[byName.get(x.n)]={g:x.g,r:x.gr}});
-    syncCap();syncInputs();render();save();closeM('mHist');toast(miss?`불러왔어요 (명렬표에 없는 ${miss}명은 빈자리)`:'기록된 자리표를 현재 자리로 불러왔어요')}}
+  if($('#hLoad'))$('#hLoad').onclick=()=>loadSnap(r.snap);
+  if($('#hGoLoad'))$('#hGoLoad').onclick=()=>{switchProf(hp);const r2=roundsOf(P.cur)[ri];if(r2&&r2.snap)loadSnap(r2.snap)}}
+function loadSnap(sn){const byName=new Map(S.students.map(x=>[x.name,x.id]));
+  if(!sn||!sn.rows||!sn.cols||!Array.isArray(sn.seats)){toast('이 기록에는 자리표 정보가 없어요');return}
+  pushHist();let miss=0;S.rows=sn.rows;S.cols=sn.cols;S.pair=!!sn.pair;S.seats=sn.seats.map(x=>{if(x.o)return{sid:null,off:true,lock:false};const id=x.n?byName.get(x.n):null;if(x.n&&id==null)miss++;return{sid:id??null,off:false,lock:false}});
+  S.gmap={};sn.seats.forEach(x=>{if(x.g&&byName.has(x.n))S.gmap[byName.get(x.n)]={g:x.g,r:x.gr}});
+  S.hidden=false;S.cover=false;
+  syncCap();syncInputs();render();save();closeM('mHist');toast(miss?`불러왔어요 (명렬표에 없는 ${miss}명은 빈자리)`:'✅ 기록된 자리를 현재 자리로 배치했어요')}
 $('#btnHist').onclick=()=>{histScope='cur';histSel=S.rounds.length?P.cur+'|'+(S.rounds.length-1):'';renderHist();openM('mHist')};
 $('#btnLoadRec').onclick=()=>{if(!S.rounds.length){toast('아직 기록된 자리가 없어요. 📌 자리 기록으로 먼저 기록해 주세요');return}
   histScope='cur';histSel=P.cur+'|'+(S.rounds.length-1);renderHist();openM('mHist');toast('👁 회차를 골라 보고 ‘현재 자리로 불러오기’를 눌러 주세요')};
@@ -1082,7 +1089,7 @@ $('#btnRec').onclick=$('#btnRec2').onclick=()=>recordRound(false);
 $('#hRec').onclick=()=>{recordRound(false);histSel=S.rounds.length?P.cur+'|'+(S.rounds.length-1):'';renderHist()};
 $('#hClear').onclick=()=>{if(!S.rounds.length)return;S.rounds=[];S.lastSig='';histSel='';save();render();renderHist();toast('이 수업의 기록을 모두 지웠어요')};
 $('#histList').addEventListener('click',e=>{const v=e.target.closest('[data-rv]'),b=e.target.closest('[data-rr]');
-  if(v){histSel=histSel===v.dataset.rv?'':v.dataset.rv;renderHist();return}
+  if(v){histSel=v.dataset.rv;renderHist();const hv=$('#histView');hv&&hv.scrollIntoView({block:'nearest',behavior:'smooth'});return}
   if(!b)return;S.rounds.splice(+b.dataset.rr,1);histSel='';S.lastSig=S.rounds.length?S.rounds[S.rounds.length-1].sig:'';save();render();renderHist()});
 function optimize(p,fresh){
   const{pool,free}=p,lv=levelMap(pool),prev=new Set(S.prev),met=metMap(),nm={};pool.forEach(s=>nm[s.id]=s.name);
@@ -1437,9 +1444,9 @@ function printSheet(mode){
   const list=S.students.slice().sort((x,y)=>(+x.no||0)-(+y.no||0));
   const n=Math.max(1,list.length),rowH=clamp(Math.floor(540/(n+1)),11,24),rfs=clamp(Math.round(rowH*.62),8,14);
   const rows=list.map(st=>`<tr style="height:${rowH}px"><td>${esc(st.no)}</td><td class="nm">${esc(st.name)}</td><td>${pos[st.id]||'—'}</td></tr>`).join('');
-  ps.innerHTML=`<div class="ph"><h1>🌻 ${esc(title)} 🎒<span class="pkind">${teacher?'교사용':'학생용'}</span></h1><p>${kindTxt(cp().kind)}${isSub()?' · '+esc(cp().name):''} · ${t?(isSub()?'교사 ':'담임 ')+esc(t)+' 선생님 · ':''}${esc(periodText())} · ${new Date().toLocaleDateString('ko-KR')} · ${teacher?'교사 시점 (교탁에서 바라보는 방향)':'학생 시점 (칠판을 바라보는 방향)'}</p></div>
-  <div class="pwrap"><div class="proster"><h2>📋 명렬표 (${list.length}명)</h2><table class="rtab" style="font-size:${rfs}px"><colgroup><col style="width:22%"><col><col style="width:28%"></colgroup><thead><tr style="height:${rowH}px"><th>번호</th><th>이름</th><th>자리</th></tr></thead><tbody>${rows}</tbody></table><p class="rnote">자리 ‘줄-번째’: 줄은 교탁에서 가까운 줄부터, 번째는 오른쪽 자리표의 왼쪽부터 세요.</p></div>
-  <div class="pmain"><div class="board2"><div class="chart" id="pc"></div></div></div></div>`;
+  const head=`<div class="ph"><span class="pkind">${teacher?'교사용':'학생용'}</span><h1>🌻 ${esc(title)} 🎒</h1><p>${kindTxt(cp().kind)}${isSub()?' · '+esc(cp().name):''} · ${t?(isSub()?'교사 ':'담임 ')+esc(t)+' 선생님 · ':''}${esc(periodText())} · ${new Date().toLocaleDateString('ko-KR')} · ${teacher?'교사 시점 (교탁에서 바라보는 방향)':'학생 시점 (칠판을 바라보는 방향)'}</p></div>`;
+  ps.innerHTML=`<div class="pwrap"><div class="proster"><h2>📋 명렬표 (${list.length}명)</h2><table class="rtab" style="font-size:${rfs}px"><colgroup><col style="width:22%"><col><col style="width:28%"></colgroup><thead><tr style="height:${rowH}px"><th>번호</th><th>이름</th><th>자리</th></tr></thead><tbody>${rows}</tbody></table><p class="rnote">자리 ‘줄-번째’: 줄은 교탁에서 가까운 줄부터, 번째는 오른쪽 자리표의 왼쪽부터 세요.</p></div>
+  <div class="pmain">${head}<div class="board2"><div class="chart" id="pc"></div></div></div></div>`;
   const pc=ps.querySelector('#pc');const gg=S.pair?30:10,groups=S.pair?Math.ceil(S.cols/2):S.cols;
   // A4 가로 인쇄 영역 기준: 자리표 칸 약 800×560px
   const swW=Math.floor((790-(groups-1)*gg)/S.cols),swH=Math.floor((540-50-(S.rows-1)*14)/S.rows/.9);
