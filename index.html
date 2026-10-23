@@ -1439,13 +1439,12 @@ function printSheet(mode){
   const teacher=mode==='teacher',keepView=S.view;
   const ps=$('#printSheet'),g=S.info.grade,c=S.info.cls,t=S.info.teacher;
   const title=`${g?g+'학년 ':''}${c?c+'반 ':''}${isSub()?cp().name+' ':''}자리 배치표`;
-  // 명렬표: 번호순, 자리 = 줄(교탁에서 가까운 순)-번째(이 표의 왼쪽부터)
-  const pos={};S.seats.forEach((x,i)=>{if(x.off||x.sid==null)return;const [r,cc]=rcOf(i);pos[x.sid]=`${r+1}-${teacher?S.cols-cc:cc+1}`});
+  // 명렬표: 번호순, 번호·이름·성별
   const list=S.students.slice().sort((x,y)=>(+x.no||0)-(+y.no||0));
   const n=Math.max(1,list.length),rowH=clamp(Math.floor(540/(n+1)),11,24),rfs=clamp(Math.round(rowH*.62),8,14);
-  const rows=list.map(st=>`<tr style="height:${rowH}px"><td>${esc(st.no)}</td><td class="nm">${esc(st.name)}</td><td>${pos[st.id]||'—'}</td></tr>`).join('');
+  const rows=list.map(st=>`<tr style="height:${rowH}px"><td>${esc(st.no)}</td><td class="nm">${esc(st.name)}</td><td>${st.gender==='M'?'남':st.gender==='F'?'여':''}</td></tr>`).join('');
   const head=`<div class="ph"><span class="pkind">${teacher?'교사용':'학생용'}</span><h1>🌻 ${esc(title)} 🎒</h1><p>${kindTxt(cp().kind)}${isSub()?' · '+esc(cp().name):''} · ${t?(isSub()?'교사 ':'담임 ')+esc(t)+' 선생님 · ':''}${esc(periodText())} · ${new Date().toLocaleDateString('ko-KR')} · ${teacher?'교사 시점 (교탁에서 바라보는 방향)':'학생 시점 (칠판을 바라보는 방향)'}</p></div>`;
-  ps.innerHTML=`<div class="pwrap"><div class="proster"><h2>📋 명렬표 (${list.length}명)</h2><table class="rtab" style="font-size:${rfs}px"><colgroup><col style="width:22%"><col><col style="width:28%"></colgroup><thead><tr style="height:${rowH}px"><th>번호</th><th>이름</th><th>자리</th></tr></thead><tbody>${rows}</tbody></table><p class="rnote">자리 ‘줄-번째’: 줄은 교탁에서 가까운 줄부터, 번째는 오른쪽 자리표의 왼쪽부터 세요.</p></div>
+  ps.innerHTML=`<div class="pwrap"><div class="proster"><h2>📋 명렬표 (${list.length}명)</h2><table class="rtab" style="font-size:${rfs}px"><colgroup><col style="width:22%"><col><col style="width:28%"></colgroup><thead><tr style="height:${rowH}px"><th>번호</th><th>이름</th><th>성별</th></tr></thead><tbody>${rows}</tbody></table></div>
   <div class="pmain">${head}<div class="board2"><div class="chart" id="pc"></div></div></div></div>`;
   const pc=ps.querySelector('#pc');const gg=S.pair?30:10,groups=S.pair?Math.ceil(S.cols/2):S.cols;
   // A4 가로 인쇄 영역 기준: 자리표 칸 약 800×560px
